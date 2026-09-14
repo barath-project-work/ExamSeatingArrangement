@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="@dimen/space_32">
+
+    <ImageView
+        android:id="@+id/ivEmptyIcon"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:src="@drawable/ic_calendar"
+        app:tint="@color/text_disabled"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/tvEmptyTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_16"
+        android:textSize="@dimen/text_section"
+        android:textStyle="bold"
+        android:textColor="@color/text_secondary"
+        android:gravity="center"
+        android:text="@string/students_empty" />
+
+    <TextView
+        android:id="@+id/tvEmptyHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_8"
+        android:textSize="@dimen/text_small"
+        android:textColor="@color/text_disabled"
+        android:gravity="center"
+        android:text="@string/students_empty_hint" />
+</LinearLayout>

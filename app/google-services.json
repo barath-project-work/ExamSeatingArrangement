@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "765326107655",
+    "project_id": "grt-exam-hall-allocation",
+    "storage_bucket": "grt-exam-hall-allocation.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:765326107655:android:8fe81ec576c122d56836a2",
+        "android_client_info": {
+          "package_name": "com.example.examhallallocation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9K3kNlRyceiPW26otPF_1ECPDiul3HEM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

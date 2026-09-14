@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Solid brand navy background; logo sits on a matching badge in the foreground. -->
+    <background android:drawable="@color/navy_primary" />
+    <foreground android:drawable="@drawable/ic_launcher_logo_foreground" />
+    <monochrome android:drawable="@drawable/ic_launcher_logo_foreground" />
+</adaptive-icon>

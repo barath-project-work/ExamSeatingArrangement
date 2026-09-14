@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_20">
+
+        <!-- Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:background="@drawable/bg_panel_blue"
+                android:padding="6dp"
+                android:src="@drawable/ic_calendar"
+                app:tint="@color/navy_primary" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_12"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/portal_upload_dialog_title"
+                    android:textColor="@color/navy_primary"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/portal_upload_dialog_subtitle"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/text_small" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Column format guide card -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.ExamHallAllocation.Card.Bordered"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_16"
+            app:cardBackgroundColor="@color/blue_tint_bg">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_12">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/portal_format_guide_title"
+                    android:textColor="@color/navy_primary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:text="@string/portal_format_guide_desc"
+                    android:textColor="@color/text_primary"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:text="Matches the college timetable format. Supports both multi-year sheets (.xlsx) and single CSV tables."
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Replace existing schedule checkbox -->
+        <com.google.android.material.checkbox.MaterialCheckBox
+            android:id="@+id/cbReplaceExisting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:checked="true"
+            android:text="@string/portal_replace_checkbox"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp" />
+
+        <!-- Option 1: Upload File (.xlsx / .csv) -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnUploadFile"
+            style="@style/Widget.ExamHallAllocation.Button.Primary"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginTop="@dimen/space_12"
+            android:text="@string/portal_upload_file_btn"
+            app:icon="@drawable/ic_upload"
+            app:iconSize="20dp" />
+
+        <!-- Option 2: Paste from Clipboard / Spreadsheet -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPasteSchedule"
+            style="@style/Widget.ExamHallAllocation.Button.Navy"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginTop="@dimen/space_8"
+            android:text="@string/portal_paste_btn"
+            app:icon="@drawable/ic_document"
+            app:iconSize="18dp" />
+
+        <!-- Option 3: Load Official Assessment Test - I -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLoadOfficial"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginTop="@dimen/space_8"
+            android:text="@string/portal_load_official_btn"
+            app:icon="@drawable/ic_refresh"
+            app:iconSize="18dp" />
+
+        <!-- Option 4: Copy Sample CSV Template -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCopyTemplate"
+            style="@style/Widget.ExamHallAllocation.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginTop="@dimen/space_8"
+            android:text="@string/portal_copy_template_btn"
+            app:icon="@drawable/ic_preview"
+            app:iconSize="18dp" />
+    </LinearLayout>
+</ScrollView>

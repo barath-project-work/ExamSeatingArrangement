@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GRT Exam Seating Arrangement & Invigilation Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- Firebase v10 Compat SDKs via CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+  <!-- LOGIN SCREEN -->
+  <div id="loginSection" style="display: flex; min-height: 100vh; align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: var(--card-bg); border: 1px solid var(--card-border); border-radius: var(--radius-lg); padding: 40px; width: 100%; max-width: 440px; box-shadow: var(--shadow-card);">
+      <div style="text-align: center; margin-bottom: 28px;">
+        <div style="width: 54px; height: 54px; background: linear-gradient(135deg, var(--grt-orange), var(--grt-orange-dark)); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; color: #FFF; box-shadow: var(--shadow-glow); margin-bottom: 14px;">
+          GRT
+        </div>
+        <h2 style="font-size: 20px; font-weight: 800; color: #FFF;">GRT Institute of Engg. &amp; Tech.</h2>
+        <p style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Exam Seating &amp; Invigilation Portal</p>
+      </div>
+
+      <form id="loginForm" style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="form-group">
+          <label>Username / Email</label>
+          <input type="text" id="loginUsername" placeholder="admin or admin@grt.edu.in" value="admin@grt.edu.in" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="loginPassword" placeholder="••••••••" value="admin@123" required autocomplete="current-password">
+        </div>
+
+        <div id="loginError" style="display: none; color: var(--red-text); font-size: 12px; font-weight: 600; padding: 8px 12px; background: var(--red-bg); border-radius: 6px;"></div>
+
+        <button type="submit" id="btnLoginSubmit" class="btn-primary" style="justify-content: center; padding: 12px; margin-top: 8px;">
+          Sign In to Portal
+        </button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--card-border); text-align: center;">
+        <p style="font-size: 12px; color: var(--text-muted);">
+          Firebase Connected: <span style="color: var(--green-text); font-weight: 600;">grt-exam-hall-allocation</span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="appSection" class="app-container" style="display: none;">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-logo">GRT</div>
+        <div class="brand-info">
+          <h2>GRT Exam Cell</h2>
+          <p>Seating System v2.0</p>
+        </div>
+      </div>
+
+      <nav class="nav-menu">
+        <a class="nav-item active" data-tab="studentsTab">
+          <span class="icon">👥</span>
+          <span>Students</span>
+        </a>
+        <a class="nav-item" data-tab="generateTab">
+          <span class="icon">⚡</span>
+          <span>Generate Seating</span>
+        </a>
+        <a class="nav-item" data-tab="teachersTab">
+          <span class="icon">👨‍🏫</span>
+          <span>Teachers</span>
+        </a>
+        <a class="nav-item" data-tab="hallsTab">
+          <span class="icon">🏛️</span>
+          <span>Halls (Rooms)</span>
+        </a>
+        <a class="nav-item" data-tab="examsTab">
+          <span class="icon">📅</span>
+          <span>Exam Schedule</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-profile">
+          <div class="user-meta">
+            <span class="user-name" id="profileName">Exam Cell Admin</span>
+            <span class="user-role" id="profileRole">ADMIN</span>
+          </div>
+          <button id="btnLogout" class="btn-icon" title="Logout">
+            <span style="font-size: 18px;">🚪</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+      
+      <!-- TAB 1: STUDENTS MANAGEMENT (STAR FEATURE) -->
+      <section id="studentsTab" class="tab-pane">
+        <div class="top-header">
+          <div>
+            <h1>Student Management</h1>
+            <p>View roll numbers by academic year, inspect individual student details, or manually register new roll numbers.</p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button id="btnOpenAddStudent" class="btn-primary">
+              <span>+ Add Roll Number</span>
+            </button>
+            <button id="btnWipeData" class="btn-danger" title="Purge any residual mock records">
+              <span>Wipe Mock Data</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon orange">🎓</div>
+            <div class="stat-info">
+              <h3 id="statTotalStudents">0</h3>
+              <p>Total Active Students</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon blue">2️⃣</div>
+            <div class="stat-info">
+              <h3 id="statYear2Count">0</h3>
+              <p>Second Year (25)</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">3️⃣</div>
+            <div class="stat-info">
+              <h3 id="statYear3Count">0</h3>
+              <p>Third Year (24)</p>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon purple">4️⃣</div>
+            <div class="stat-info">
+              <h3 id="statYear4Count">0</h3>
+              <p>Final Year (23)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="controls-card">
+          <div class="controls-row">
+            <!-- Year Selector Chips -->
+            <div class="chip-group" id="yearFilterGroup">
+              <button class="chip-btn active" data-year="2">Second Year (25)</button>
+              <button class="chip-btn" data-year="3">Third Year (24)</button>
+              <button class="chip-btn" data-year="4">Final Year (23)</button>
+            </div>
+
+            <!-- Search box -->
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="studentSearchInput" placeholder="Search by roll number or name...">
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid of Roll Number Boxes -->
+        <div id="studentBoxesGrid" class="student-grid">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Empty state when no students -->
+        <div id="emptyStudentsState" style="display: none; text-align: center; padding: 60px 20px; background: var(--card-bg); border: 1px dashed var(--card-border); border-radius: var(--radius-md); margin-top: 20px;">
+          <div style="font-size: 40px; margin-bottom: 12px;">📋</div>
+          <h3 style="font-size: 18px; color: #FFF;">No students found for this year</h3>
+          <p style="color: var(--text-secondary); font-size: 13px; margin-top: 4px;">Click "+ Add Roll Number" above to manually register students, or load authentic college roll numbers.</p>
+          <button id="btnLoadRealData" class="btn-secondary" style="margin: 16px auto 0;">
+            <span>⚡ Load Institutional Anna Univ. Roll Numbers</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- TAB 2: GENERATE SEATING -->
+      <section id="generateTab" class="tab-pane" style="display: none;">
+        <div class="top-header">
+          <div>
+            <h1>Seating Arrangement Generator</h1>
+            <p>Autonomous 2-phase seating allocation complying with Anna University alternate seating guidelines.</p>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button id="btnRunGenerator" class="btn-primary">
+              <span>⚡ Generate Allocation</span>
+            </button>
+            <button id="btnPrintArrangement" class="btn-secondary">
+              <span>🖨️ Print / Export PDF</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="controls-card">
+          <div class="controls-row">
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+              <label>Exam Date</label>
+              <input type="date" id="examDatePicker" value="2026-04-13">
+            </div>
+            <div class="form-group" style="flex: 1; min-width: 200px;">
+              <label>Allocation Phase</label>
+              <select id="examPhasePicker">
+                <option value="1">Phase 1 (2nd Year + 3rd Year)</option>
+                <option value="2">Phase 2 (2nd Year + Final Year)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="seatingHallsContainer">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </section>
+
+      <!-- TAB 3: TEACHERS -->
+      <section id="teachersTab" class="tab-pane" style="display: none;">
+        <div class="top-header">
+          <div>
+            <h1>Faculty &amp; Invigilators</h1>
+            <p>Teaching staff directory and examination duty eligibility.</p>
+          </div>
+        </div>
+        <div id="teachersListContainer" class="student-grid"></div>
+      </section>
+
+      <!-- TAB 4: HALLS -->
+      <section id="hallsTab" class="tab-pane" style="display: none;">
+        <div class="top-header">
+          <div>
+            <h1>Examination Halls (Rooms)</h1>
+            <p>12 Institutional rooms configured with 30-desk standard capacities.</p>
+          </div>
+        </div>
+        <div id="hallsListContainer" class="student-grid"></div>
+      </section>
+
+      <!-- TAB 5: EXAMS -->
+      <section id="examsTab" class="tab-pane" style="display: none;">
+        <div class="top-header">
+          <div>
+            <h1>Exam Schedule &amp; Subjects</h1>
+            <p>Timetable of upcoming university examinations.</p>
+          </div>
+        </div>
+        <div id="examsListContainer" class="student-grid"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: STUDENT DETAILS (DISPLAYED ON TAPPING ROLL NUMBER BOX) -->
+  <div id="modalStudentDetails" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 style="color: var(--text-secondary); font-size: 12px; letter-spacing: 1px;">STUDENT PROFILE</h3>
+        <button class="modal-close" onclick="closeModal('modalStudentDetails')">&times;</button>
+      </div>
+      <div class="student-detail-box">
+        <div>
+          <div class="detail-name" id="modalDetailName">Aravind Kumar K</div>
+          <div class="detail-roll" id="modalDetailRoll">110325104001</div>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <p>Academic Year</p>
+            <p id="modalDetailYear">2nd Year (25)</p>
+          </div>
+          <div class="detail-item">
+            <p>Branch &amp; Section</p>
+            <p id="modalDetailSec">CSE · Sec A</p>
+          </div>
+          <div class="detail-item">
+            <p>Sequential Position</p>
+            <p id="modalDetailPos">#001</p>
+          </div>
+          <div class="detail-item">
+            <p>Exam Eligibility</p>
+            <p id="modalDetailStatus" style="color: var(--green-text);">ACTIVE ELIGIBLE</p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="btnModalDeleteStudent" class="btn-danger">Delete</button>
+        <button id="btnModalModifyStudent" class="btn-secondary">Modify</button>
+        <button class="btn-primary" onclick="closeModal('modalStudentDetails')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ADD / MODIFY ROLL NUMBER -->
+  <div id="modalAddEditStudent" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalAddEditTitle">Add Roll Number</h3>
+        <button class="modal-close" onclick="closeModal('modalAddEditStudent')">&times;</button>
+      </div>
+      <form id="formAddEditStudent" class="modal-body">
+        <input type="hidden" id="editStudentId">
+
+        <div class="form-group">
+          <label>Academic Year Batch</label>
+          <div class="chip-group" id="dialogYearGroup">
+            <button type="button" class="chip-btn active" data-year="2">Second Year (25)</button>
+            <button type="button" class="chip-btn" data-year="3">Third Year (24)</button>
+            <button type="button" class="chip-btn" data-year="4">Final Year (23)</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>12-Digit Roll Number (Format: 1103 + YY + 104 + XXX)</label>
+          <input type="text" id="inputRollNumber" maxlength="12" style="font-family: var(--font-mono);" required>
+        </div>
+
+        <div class="form-group">
+          <label>Student Full Name</label>
+          <input type="text" id="inputStudentName" placeholder="e.g. Subash R, Aravind Kumar K" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Section</label>
+            <input type="text" id="inputSection" value="A" maxlength="2">
+          </div>
+          <div class="form-group">
+            <label>Position (Auto if left empty)</label>
+            <input type="number" id="inputPosition" placeholder="e.g. 1">
+          </div>
+        </div>
+
+        <div class="form-group" style="flex-direction: row; align-items: center; gap: 10px; margin-top: 6px;">
+          <input type="checkbox" id="inputActive" checked style="width: 18px; height: 18px; accent-color: var(--grt-orange);">
+          <label for="inputActive" style="text-transform: none; font-size: 13px; color: #FFF; cursor: pointer;">
+            Eligible for Examinations (Active)
+          </label>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" onclick="closeModal('modalAddEditStudent')">Cancel</button>
+          <button type="submit" id="btnSaveStudent" class="btn-primary">Save Roll Number</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- App logic -->
+  <script src="app.js"></script>
+</body>
+</html>

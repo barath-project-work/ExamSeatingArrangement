@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.email.matches('admin.*@grt[.]edu.*') ||
+         get(/databases/$(database)/documents/teachers/$(request.auth.uid)).data.role == 'ADMIN');
+    }
+
+    // Students collection: Authenticated users can read, only Admin can create/update/delete
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Halls collection: Authenticated users can read, only Admin can modify
+    match /halls/{hallId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Exams schedule: Authenticated users can read, only Admin can modify
+    match /exams/{examId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Teachers profile directory: Authenticated users can read, only Admin can modify
+    match /teachers/{teacherId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Arrangements and nested subcollections (hallAssignments, invigilators)
+    match /arrangements/{arrangementId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+
+      match /hallAssignments/{hallId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+
+      match /invigilators/{invigilatorId} {
+        allow read: if isAuthenticated();
+        allow write: if isAdmin();
+      }
+    }
+  }
+}

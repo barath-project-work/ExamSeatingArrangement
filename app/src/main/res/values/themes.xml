@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- GRT Exam Seating Arrangement – light professional theme matching PNG references -->
+    <style name="Base.Theme.ExamHallAllocation" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/navy_primary</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/blue_tint_bg</item>
+        <item name="colorOnPrimaryContainer">@color/navy_primary</item>
+        <item name="colorSecondary">@color/blue_secondary</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/status_green_bg</item>
+        <item name="colorOnSecondaryContainer">@color/status_green_text</item>
+        <item name="colorTertiary">@color/grt_orange</item>
+        <item name="colorOnTertiary">@color/white</item>
+        <item name="colorTertiaryContainer">@color/grt_orange_light</item>
+        <item name="colorOnTertiaryContainer">@color/grt_orange_dark</item>
+        <item name="colorError">@color/status_red_text</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">@color/status_red_bg</item>
+        <item name="colorOnErrorContainer">@color/status_red_text</item>
+        <item name="colorSurface">@color/card_surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceVariant">@color/field_bg</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorOutline">@color/stroke_light</item>
+        <item name="android:colorBackground">@color/screen_bg</item>
+        <item name="android:statusBarColor">@color/navy_deep</item>
+        <item name="android:navigationBarColor">@color/navy_deep</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="materialAlertDialogTheme">@style/Theme.ExamHallAllocation.Dialog</item>
+    </style>
+
+    <style name="Theme.ExamHallAllocation" parent="Base.Theme.ExamHallAllocation" />
+
+    <style name="Theme.ExamHallAllocation.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="shapeAppearanceOverlay">@style/ShapeDialog.ExamHallAllocation</item>
+    </style>
+
+    <style name="ShapeDialog.ExamHallAllocation" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/dialog_radius</item>
+    </style>
+
+    <!-- Top app bar: navy, matching all reference screens -->
+    <style name="Widget.ExamHallAllocation.TopBar" parent="Widget.Material3.AppBarLayout">
+        <item name="android:background">@color/navy_primary</item>
+        <item name="elevation">0dp</item>
+    </style>
+
+    <!-- Primary button: GRT orange, per reference screens -->
+    <style name="Widget.ExamHallAllocation.Button.Primary" parent="Widget.Material3.Button">
+        <item name="android:textSize">@dimen/button_text_size</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:paddingStart">@dimen/space_20</item>
+        <item name="android:paddingEnd">@dimen/space_20</item>
+        <item name="backgroundTint">@color/grt_orange</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="rippleColor">@color/grt_orange_light</item>
+        <item name="cornerRadius">@dimen/button_radius</item>
+    </style>
+
+    <style name="Widget.ExamHallAllocation.Button.Navy" parent="Widget.Material3.Button">
+        <item name="android:textSize">@dimen/button_text_size</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:paddingStart">@dimen/space_20</item>
+        <item name="android:paddingEnd">@dimen/space_20</item>
+        <item name="backgroundTint">@color/navy_primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="cornerRadius">@dimen/button_radius</item>
+    </style>
+
+    <style name="Widget.ExamHallAllocation.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textSize">@dimen/button_text_size</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:paddingStart">@dimen/space_20</item>
+        <item name="android:paddingEnd">@dimen/space_20</item>
+        <item name="strokeColor">@color/chip_stroke_blue</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:textColor">@color/navy_primary</item>
+        <item name="cornerRadius">@dimen/button_radius</item>
+    </style>
+
+    <style name="Widget.ExamHallAllocation.Button.Danger" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/button_height_small</item>
+        <item name="android:paddingStart">@dimen/space_12</item>
+        <item name="android:paddingEnd">@dimen/space_12</item>
+        <item name="android:textSize">@dimen/text_small</item>
+        <item name="strokeColor">@color/status_red_solid</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="android:textColor">@color/status_red_text</item>
+        <item name="cornerRadius">10dp</item>
+    </style>
+
+    <style name="Widget.ExamHallAllocation.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:textSize">@dimen/button_text_size</item>
+        <item name="android:minHeight">@dimen/button_height</item>
+        <item name="android:textColor">@color/navy_primary</item>
+        <item name="cornerRadius">@dimen/button_radius</item>
+    </style>
+
+    <!-- Text inputs -->
+    <style name="Widget.ExamHallAllocation.TextInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/card_surface</item>
+        <item name="boxStrokeColor">@color/chip_stroke_blue</item>
+        <item name="boxCornerRadiusTopStart">@dimen/input_radius</item>
+        <item name="boxCornerRadiusTopEnd">@dimen/input_radius</item>
+        <item name="boxCornerRadiusBottomStart">@dimen/input_radius</item>
+        <item name="boxCornerRadiusBottomEnd">@dimen/input_radius</item>
+        <item name="android:textColorHint">@color/text_secondary</item>
+        <item name="boxStrokeWidth">1dp</item>
+        <item name="boxStrokeWidthFocused">2dp</item>
+    </style>
+
+    <!-- Cards -->
+    <style name="Widget.ExamHallAllocation.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/card_surface</item>
+        <item name="cardCornerRadius">@dimen/card_radius</item>
+        <item name="cardElevation">@dimen/card_elevation</item>
+        <item name="contentPadding">@dimen/card_padding</item>
+        <item name="strokeWidth">0dp</item>
+    </style>
+
+    <style name="Widget.ExamHallAllocation.Card.Bordered" parent="Widget.Material3.CardView.Outlined">
+        <item name="cardBackgroundColor">@color/card_surface</item>
+        <item name="cardCornerRadius">@dimen/card_radius</item>
+        <item name="cardElevation">0dp</item>
+        <item name="contentPadding">@dimen/card_padding</item>
+        <item name="strokeWidth">@dimen/card_stroke</item>
+        <item name="strokeColor">@color/stroke_light</item>
+    </style>
+
+    <!-- Status badge -->
+    <style name="Widget.ExamHallAllocation.Badge" parent="">
+        <item name="android:minHeight">@dimen/badge_min_height</item>
+        <item name="android:paddingStart">@dimen/badge_padding_h</item>
+        <item name="android:paddingEnd">@dimen/badge_padding_h</item>
+        <item name="android:gravity">center</item>
+        <item name="android:textSize">@dimen/text_badge</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:background">@drawable/bg_badge</item>
+    </style>
+
+    <!-- Section header text -->
+    <style name="Text.ExamHallAllocation.SectionHeader" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:textSize">@dimen/text_section</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/navy_primary</item>
+    </style>
+
+    <style name="Text.ExamHallAllocation.ScreenTitle" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:textSize">@dimen/text_title_screen</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+</resources>

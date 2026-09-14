@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">GRT Exam Seating Arrangement</string>
+
+    <!-- Login -->
+    <string name="login_title">GRT Exam Seating\nArrangement</string>
+    <string name="login_subtitle">Examination hall seating and invigilation duty management</string>
+    <string name="hint_username">Username</string>
+    <string name="hint_password">Password</string>
+    <string name="action_sign_in">Sign In</string>
+    <string name="login_error_credentials">Invalid username or password. Please try again.</string>
+    <string name="login_error_fields">Please enter both username and password</string>
+    <string name="login_offline_note">Offline mode – demo credentials in use</string>
+    <string name="login_demo_admin">Sign in as Demo Admin</string>
+    <string name="login_demo_teacher">Sign in as Demo Teacher</string>
+    <string name="show_password">Show password</string>
+    <string name="hide_password">Hide password</string>
+
+    <!-- Common -->
+    <string name="action_back">Back</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_search">Search</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_ok">OK</string>
+    <string name="action_logout">Logout</string>
+    <string name="action_regenerate">Regenerate</string>
+    <string name="action_approve">Approve</string>
+    <string name="action_export_pdf">Export PDF</string>
+    <string name="action_add">Add</string>
+    <string name="action_close">Close</string>
+    <string name="loading">Loading…</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="offline_banner">You are offline – showing locally cached data</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_students">Students</string>
+    <string name="nav_teachers">Teachers</string>
+    <string name="nav_exams">Exams</string>
+    <string name="nav_halls">Halls</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Admin dashboard -->
+    <string name="admin_dashboard_title">Admin Dashboard</string>
+    <string name="admin_greeting">Examination Cell</string>
+    <string name="stat_total_students">Total Students</string>
+    <string name="stat_active_teachers">Active Teachers</string>
+    <string name="stat_active_halls">Active Halls</string>
+    <string name="stat_exam_status">Exam Status</string>
+    <string name="exam_notice_title">Upcoming Examination</string>
+    <string name="action_generate_arrangement">Generate Arrangement</string>
+    <string name="action_preview_arrangement">Preview Arrangement</string>
+    <string name="action_manage_students">Manage Students</string>
+    <string name="action_manage_teachers">Manage Teachers</string>
+    <string name="action_manage_exams">Exam Setup</string>
+    <string name="action_manage_halls">Manage Halls</string>
+    <string name="arrangement_status_title">Arrangement Status</string>
+    <string name="status_draft">Draft</string>
+    <string name="status_approved">Approved</string>
+    <string name="status_none">Not generated</string>
+
+    <!-- Students -->
+    <string name="students_title">Student Management</string>
+    <string name="students_count_format">%1$d active students</string>
+    <string name="students_import_csv">Import CSV</string>
+    <string name="students_add">Add Student</string>
+    <string name="hint_register_number">Register Number</string>
+    <string name="hint_student_name">Student Name</string>
+    <string name="hint_year">Year</string>
+    <string name="hint_section">Section</string>
+    <string name="hint_position">Position</string>
+    <string name="year_2">2nd Year</string>
+    <string name="year_3">3rd Year</string>
+    <string name="year_4">4th Year</string>
+    <string name="all_years">All Years</string>
+    <string name="filter_section">Section</string>
+    <string name="student_added">Student added</string>
+    <string name="student_updated">Student updated</string>
+    <string name="student_deleted">Student removed</string>
+    <string name="student_duplicate">A student with this register number already exists</string>
+    <string name="students_empty">No students added yet</string>
+    <string name="students_empty_hint">Add students or import a CSV file to get started</string>
+    <string name="csv_invalid_format">Invalid CSV format. Expected: RegisterNumber,Name,Year,Section,Position</string>
+    <string name="csv_import_result">Imported %1$d students (%2$d skipped)</string>
+    <string name="students_stats_format">%1$s: %2$d active · %3$d inactive</string>
+
+    <!-- CSV import -->
+    <string name="import_dialog_title">Import CSV file</string>
+    <string name="import_option_replace">Replace all existing data</string>
+    <string name="import_option_merge">Merge with existing data</string>
+
+    <!-- Teachers -->
+    <string name="teachers_title">Teacher Management</string>
+    <string name="teachers_add">Add Teacher</string>
+    <string name="hint_teacher_name">Teacher Name</string>
+    <string name="hint_teacher_username">Username</string>
+    <string name="hint_teacher_password">Initial Password</string>
+    <string name="role_normal">Teacher</string>
+    <string name="role_hod">HOD</string>
+    <string name="role_coordinator">Exam Cell Coordinator</string>
+    <string name="role_admin">Admin</string>
+    <string name="teacher_added">Teacher added</string>
+    <string name="teacher_updated">Teacher updated</string>
+    <string name="teacher_deleted">Teacher removed</string>
+    <string name="teacher_duplicate">A teacher with this username already exists</string>
+    <string name="teachers_empty">No teachers added yet</string>
+    <string name="teachers_empty_hint">Add teachers to build the invigilation pool</string>
+    <string name="teacher_deactivate_confirm">Deactivate this teacher? They will not receive invigilation duties.</string>
+    <string name="teacher_active">Active</string>
+    <string name="teacher_inactive">Inactive</string>
+    <string name="teacher_never_dutied">No duties yet</string>
+
+    <!-- Exams -->
+    <string name="exams_title">Exam Setup</string>
+    <string name="exams_add">Add Exam</string>
+    <string name="hint_exam_name">Exam Name</string>
+    <string name="hint_exam_date">Exam Date</string>
+    <string name="hint_semester">Semester</string>
+    <string name="hint_subject_code">Subject Code</string>
+    <string name="hint_subject_name">Subject Name</string>
+    <string name="exam_saved">Exam saved</string>
+    <string name="exam_deleted">Exam deleted</string>
+    <string name="exams_empty">No exams configured yet</string>
+    <string name="exams_empty_hint">Add exams day by day for each year</string>
+    <string name="exams_days_range">Day %1$d of 7</string>
+    <string name="exams_by_date">By date</string>
+    <string name="exam_session_format">%1$s · Sem %2$d</string>
+
+    <!-- Halls -->
+    <string name="halls_title">Hall Management</string>
+    <string name="halls_add">Add Hall</string>
+    <string name="halls_warning">Halls marked inactive will be excluded from arrangement generation.</string>
+    <string name="hint_room_number">Room Number</string>
+    <string name="hint_block">Block</string>
+    <string name="hint_floor">Floor</string>
+    <string name="hint_capacity">Exam Capacity</string>
+    <string name="hall_saved">Hall saved</string>
+    <string name="hall_deleted">Hall removed</string>
+    <string name="halls_empty">No active examination halls available</string>
+    <string name="halls_empty_hint">Add halls with room, block, floor and capacity</string>
+    <string name="hall_status_active">Active</string>
+    <string name="hall_status_inactive">Inactive</string>
+    <string name="hall_capacity_format">Capacity %1$d</string>
+    <string name="hall_location_format">Block %1$s · Floor %2$d</string>
+
+    <!-- Generate -->
+    <string name="generate_title">Generate Arrangement</string>
+    <string name="generate_exam_label">Examination</string>
+    <string name="generate_date_label">Date</string>
+    <string name="generate_phase_label">Phase</string>
+    <string name="generate_years_label">Applicable Years</string>
+    <string name="phase_1">Phase 1 – All years (2nd + 3rd + 4th)</string>
+    <string name="phase_2">Phase 2 – 2nd + 3rd Year</string>
+    <string name="phase_3">Phase 3 – 3rd Year only</string>
+    <string name="generate_btn">GENERATE ARRANGEMENT</string>
+    <string name="generate_rules_title">Generation Rules Applied</string>
+    <string name="rule_batches">15-position batches with gaps preserved</string>
+    <string name="rule_pairs">Randomized year pairings per hall</string>
+    <string name="rule_capacity">Hall exam capacity respected</string>
+    <string name="rule_invigilators">One invigilator per occupied hall</string>
+    <string name="rule_hod">HOD excluded from invigilation</string>
+    <string name="rule_coordinator">Coordinator limited to one duty day</string>
+    <string name="generate_summary_title">Generation Summary</string>
+    <string name="generate_halls_used">Halls used</string>
+    <string name="generate_students_seated">Students seated</string>
+    <string name="generate_invigilators">Invigilators assigned</string>
+    <string name="generate_success">Arrangement generated successfully</string>
+    <string name="generate_error_title">Arrangement could not be generated</string>
+    <string name="generate_running">Generating arrangement…</string>
+
+    <!-- Preview -->
+    <string name="preview_title">Arrangement Preview</string>
+    <string name="preview_col_date">Date</string>
+    <string name="preview_col_room">Room No.</string>
+    <string name="preview_col_block">Block</string>
+    <string name="preview_col_year">Year / Sem</string>
+    <string name="preview_col_range">Positions</string>
+    <string name="preview_col_count">Students</string>
+    <string name="preview_col_invigilator">Invigilator</string>
+    <string name="preview_empty">No arrangement generated yet</string>
+    <string name="preview_empty_hint">Generate an arrangement to review it here</string>
+    <string name="preview_unassigned">Unassigned</string>
+    <string name="preview_approved_msg">Arrangement approved. You can now export the PDF.</string>
+    <string name="preview_regenerate_confirm">Regenerate will replace the current arrangement with a new randomized one. Continue?</string>
+    <string name="preview_approve_confirm">Approve this arrangement for export?</string>
+    <string name="preview_edit_title">Edit Assignment</string>
+    <string name="preview_edit_invigilator">Change invigilator</string>
+    <string name="preview_no_rows">No halls occupied for this date</string>
+
+    <!-- PDF -->
+    <string name="pdf_title">PDF Export</string>
+    <string name="pdf_doc_title">EXAMINATION HALL ALLOCATION</string>
+    <string name="pdf_col_sno">S.No</string>
+    <string name="pdf_col_room">Room No.</string>
+    <string name="pdf_col_floor">Floor</string>
+    <string name="pdf_col_branch">Branch</string>
+    <string name="pdf_col_year_sem">Year / Sem</string>
+    <string name="pdf_col_reg_from">Reg. No. From</string>
+    <string name="pdf_col_reg_to">Reg. No. To</string>
+    <string name="pdf_col_count">No. of Students</string>
+    <string name="pdf_col_total">Total</string>
+    <string name="pdf_phase1_header">PHASE 1 – 2nd + 3rd + 4th YEAR</string>
+    <string name="pdf_phase2_header">PHASE 2 – 2nd + 3rd YEAR</string>
+    <string name="pdf_phase3_header">PHASE 3 – 3rd YEAR ONLY</string>
+    <string name="pdf_ready">Document ready to export</string>
+    <string name="pdf_exported_to">Saved to %1$s</string>
+    <string name="pdf_export_failed">Could not create the PDF document</string>
+    <string name="pdf_no_arrangement">Generate and approve an arrangement before exporting</string>
+    <string name="pdf_total_row">Total</string>
+    <string name="pdf_signature_left">Exam Cell Coordinator</string>
+    <string name="pdf_signature_right">Principal</string>
+
+    <!-- Teacher dashboard -->
+    <string name="teacher_dashboard_title">My Duties</string>
+    <string name="teacher_welcome_format">Welcome, %1$s</string>
+    <string name="teacher_question">Do I have duty today?</string>
+    <string name="teacher_no_duty">No invigilation duty assigned</string>
+    <string name="teacher_duty_on">Duty on %1$s</string>
+    <string name="teacher_total_duties">Total duty days</string>
+    <string name="teacher_free_days">Free days</string>
+    <string name="teacher_my_hall">My Hall</string>
+    <string name="teacher_students_title">Students in my hall</string>
+    <string name="teacher_students_empty">No students assigned to your hall for this exam</string>
+    <string name="teacher_confidential">Your duty details are personal. Other teachers\' assignments are not visible to you.</string>
+    <string name="teacher_no_exams">No exam schedule available yet</string>
+    <string name="coordinator_note">As Exam Cell Coordinator you may receive at most one duty day for the entire exam.</string>
+    <string name="hod_note">As HOD you are exempt from invigilation duty.</string>
+
+    <!-- Dates -->
+    <string name="date_format_display">EEE, dd MMM yyyy</string>
+    <string name="date_format_short">dd MMM</string>
+    <string name="date_format_iso">yyyy-MM-dd</string>
+
+    <!-- Dialogs -->
+    <string name="confirm_delete_title">Delete %1$s?</string>
+    <string name="confirm_delete_message">This action cannot be undone.</string>
+    <string name="confirm_logout">Log out of the application?</string>
+
+    <!-- Timetable Portal -->
+    <string name="portal_timetable_title">Exam Timetable &amp; Schedule Portal</string>
+    <string name="portal_timetable_subtitle">Upload and schedule assessment dates across II, III &amp; IV years</string>
+    <string name="portal_upload_button">Upload Timetable</string>
+    <string name="portal_upload_dialog_title">Timetable Upload Portal</string>
+    <string name="portal_upload_dialog_subtitle">Upload Excel (.xlsx) or CSV exam timetable</string>
+    <string name="portal_format_guide_title">Supported Spreadsheet Columns</string>
+    <string name="portal_format_guide_desc">Date | Session | Timing | Year/Sem | Dept | Subject Code | Subject Name | Count</string>
+    <string name="portal_upload_file_btn">Upload Excel / CSV File (.xlsx, .csv)</string>
+    <string name="portal_paste_btn">Paste from Spreadsheet / Clipboard</string>
+    <string name="portal_load_official_btn">Load Official Assessment Test - I (18 Subjects)</string>
+    <string name="portal_copy_template_btn">Copy Sample CSV Template</string>
+    <string name="portal_replace_checkbox">Replace existing schedule</string>
+    <string name="hint_session">Session</string>
+    <string name="hint_timing">Exam Timing (e.g. 8:40 a.m. TO 10:10 a.m.)</string>
+    <string name="hint_department">Department (e.g. CSE)</string>
+    <string name="hint_student_count">Student Count</string>
+</resources>

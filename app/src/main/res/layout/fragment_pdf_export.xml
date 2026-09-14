@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/screen_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/screen_padding_h"
+        android:paddingVertical="@dimen/space_12">
+
+        <!-- Active Exam & Scheduled Date Selector -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.ExamHallAllocation.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvExamTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Exam Seating Allocation"
+                    android:textColor="@color/navy_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Select an exam date to view live hall allocations &amp; download PDF"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+
+                <!-- Date Selector Chips -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:scrollbars="none">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipGroupDates"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleLine="true"
+                        app:selectionRequired="true"
+                        app:singleSelection="true" />
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Summary Metric Badges & Re-generate action -->
+        <LinearLayout
+            android:id="@+id/layoutMetrics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/tvHallsBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_badge"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:textColor="@color/navy_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="12 Halls" />
+
+            <TextView
+                android:id="@+id/tvStudentsBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_6"
+                android:background="@drawable/bg_badge"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:textColor="@color/navy_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="344 Students" />
+
+            <TextView
+                android:id="@+id/tvStaffBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_6"
+                android:background="@drawable/bg_badge"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:textColor="@color/navy_primary"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                tools:text="12 Invigilators" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRegenerate"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Re-allocate"
+                android:textColor="@color/navy_primary"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                app:icon="@drawable/ic_refresh"
+                app:iconSize="14dp"
+                app:iconTint="@color/navy_primary" />
+        </LinearLayout>
+
+        <!-- Official Letterhead Card with Live Allocation Table -->
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.ExamHallAllocation.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_8">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Institutional Banner -->
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/grt_banner"
+                    android:contentDescription="@string/app_name" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:gravity="center"
+                    android:text="@string/pdf_doc_title"
+                    android:textColor="@color/navy_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvDateSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:gravity="center"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp"
+                    tools:text="Date: 17-08-2026 (FN) · Department of Computer Science and Engineering" />
+
+                <!-- Table Header Bar -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_12"
+                    android:background="@color/navy_primary"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="@dimen/space_8"
+                    android:paddingVertical="@dimen/space_8">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center"
+                        android:text="@string/pdf_col_room"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/text_badge"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center"
+                        android:text="@string/pdf_col_year_sem"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/text_badge"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="2"
+                        android:gravity="center"
+                        android:text="@string/pdf_col_count"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/text_badge"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1.5"
+                        android:gravity="center"
+                        android:text="@string/pdf_col_total"
+                        android:textColor="@color/white"
+                        android:textSize="@dimen/text_badge"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- Dynamic Rows Recycler -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerSeating"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false" />
+
+                <!-- Empty state if not generated yet for this date -->
+                <LinearLayout
+                    android:id="@+id/layoutEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingVertical="@dimen/space_24"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No seating arrangements generated yet for this date."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnGenerateNow"
+                        style="@style/Widget.ExamHallAllocation.Button.Primary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="@dimen/button_height_small"
+                        android:layout_marginTop="@dimen/space_12"
+                        android:text="Generate Seating Arrangement"
+                        android:textSize="12sp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Status / Done Banner -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:background="@drawable/bg_banner_green"
+            android:gravity="center"
+            android:padding="@dimen/space_12"
+            android:textColor="@color/status_green_text"
+            android:textSize="@dimen/text_small"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <!-- Primary Action: Export PDF Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnExport"
+            style="@style/Widget.ExamHallAllocation.Button.Primary"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/button_height"
+            android:layout_marginTop="@dimen/space_16"
+            android:text="@string/action_export_pdf"
+            app:icon="@drawable/ic_document"
+            app:iconTint="@color/white"
+            app:iconGravity="textStart" />
+
+        <!-- Done Actions (Open, Share, Back) -->
+        <LinearLayout
+            android:id="@+id/layoutDoneActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_12"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnViewPdf"
+                style="@style/Widget.ExamHallAllocation.Button.Navy"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:text="Open &amp; View PDF" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSharePdf"
+                style="@style/Widget.ExamHallAllocation.Button.Outlined"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/space_8"
+                android:text="Share PDF (WhatsApp / Drive)" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnBackDashboard"
+                style="@style/Widget.ExamHallAllocation.Button.Text"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/button_height"
+                android:layout_marginTop="@dimen/space_4"
+                android:text="Back to Admin Dashboard" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/space_12"
+            android:visibility="gone" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

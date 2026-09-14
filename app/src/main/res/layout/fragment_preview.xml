@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/screen_bg">
+
+    <LinearLayout
+        android:id="@+id/actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/screen_padding_h"
+        android:paddingVertical="@dimen/space_8"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRegenerate"
+            style="@style/Widget.ExamHallAllocation.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/button_height_small"
+            android:minHeight="@dimen/button_height_small"
+            android:drawablePadding="@dimen/space_4"
+            android:paddingHorizontal="@dimen/space_12"
+            android:text="@string/action_regenerate"
+            app:icon="@drawable/ic_refresh"
+            app:iconTint="@color/navy_primary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnApprove"
+            style="@style/Widget.ExamHallAllocation.Button.Primary"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/button_height_small"
+            android:minHeight="@dimen/button_height_small"
+            android:layout_marginStart="@dimen/space_8"
+            android:drawablePadding="@dimen/space_4"
+            android:paddingHorizontal="@dimen/space_12"
+            android:text="@string/action_approve"
+            app:icon="@drawable/ic_check"
+            app:iconTint="@color/white" />
+    </LinearLayout>
+
+    <!-- Table header (navy band, per page-8) -->
+    <LinearLayout
+        android:id="@+id/tableHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_padding_h"
+        android:layout_marginTop="@dimen/space_4"
+        android:background="@drawable/bg_chip_navy"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/space_12"
+        app:layout_constraintTop_toBottomOf="@id/actions">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:paddingVertical="@dimen/space_8"
+            android:text="@string/preview_col_room"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_badge"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:paddingVertical="@dimen/space_8"
+            android:text="@string/preview_col_year"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_badge"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:paddingVertical="@dimen/space_8"
+            android:text="@string/preview_col_count"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_badge"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="3"
+            android:paddingVertical="@dimen/space_8"
+            android:text="@string/preview_col_invigilator"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_badge"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerPreview"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="@dimen/screen_padding_h"
+        android:layout_marginTop="@dimen/space_4"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/space_80"
+        app:layout_constraintTop_toBottomOf="@id/tableHeader"
+        app:layout_constraintBottom_toTopOf="@id/btnExport" />
+
+    <include
+        android:id="@+id/emptyState"
+        layout="@layout/view_empty_state"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/tableHeader"
+        android:visibility="gone" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnExport"
+        style="@style/Widget.ExamHallAllocation.Button.Primary"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/button_height"
+        android:layout_marginHorizontal="@dimen/screen_padding_h"
+        android:layout_marginBottom="@dimen/space_16"
+        android:text="@string/action_export_pdf"
+        app:layout_constraintBottom_toBottomOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

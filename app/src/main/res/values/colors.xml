@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand palette extracted from GRT logos + UI references -->
+    <color name="navy_primary">#17324D</color>
+    <color name="navy_deep">#0F2438</color>
+    <color name="blue_secondary">#2E5D7B</color>
+    <color name="blue_bright">#234B75</color>
+    <color name="blue_tint_bg">#EBF2FE</color>
+
+    <color name="grt_orange">#F7941D</color>
+    <color name="grt_orange_dark">#D97B06</color>
+    <color name="grt_orange_light">#FDEBD6</color>
+    <color name="grt_crimson">#B8292F</color>
+    <color name="grt_gold">#C99A22</color>
+    <color name="grt_gold_tint">#FFF9E6</color>
+
+    <color name="screen_bg">#F0F4F8</color>
+    <color name="card_surface">#FFFFFF</color>
+    <color name="field_bg">#F6F8FA</color>
+    <color name="divider_color">#E4E9EF</color>
+    <color name="border_color">#E4E9EF</color>
+    <color name="stroke_light">#DDE4EB</color>
+
+    <color name="text_primary">#1F2933</color>
+    <color name="text_secondary">#667085</color>
+    <color name="text_on_navy">#FFFFFF</color>
+    <color name="text_on_navy_secondary">#B9C6D2</color>
+    <color name="text_disabled">#9AA5B1</color>
+
+    <color name="status_green_bg">#E6F4EA</color>
+    <color name="status_green_text">#2E7D5B</color>
+    <color name="status_red_bg">#FDF2F2</color>
+    <color name="status_red_text">#C0393D</color>
+    <color name="status_red_solid">#D9534F</color>
+
+    <color name="chip_stroke_blue">#B7CEE4</color>
+    <color name="chip_text_blue">#2E5D7B</color>
+    <color name="table_zebra">#F5F8FB</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+</resources>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/loginFragment">
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.examhallallocation.presentation.auth.LoginFragment"
+        android:label="Login">
+        <action
+            android:id="@+id/action_login_to_admin"
+            app:destination="@id/adminDashboardFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_login_to_teacher"
+            app:destination="@id/teacherDashboardFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminDashboardFragment"
+        android:name="com.example.examhallallocation.presentation.admin.AdminDashboardFragment"
+        android:label="Admin Dashboard">
+        <action android:id="@+id/action_dashboard_to_students" app:destination="@id/studentsFragment" />
+        <action android:id="@+id/action_dashboard_to_teachers" app:destination="@id/teachersFragment" />
+        <action android:id="@+id/action_dashboard_to_exams" app:destination="@id/examsFragment" />
+        <action android:id="@+id/action_dashboard_to_halls" app:destination="@id/hallsFragment" />
+        <action android:id="@+id/action_dashboard_to_generate" app:destination="@id/generateFragment" />
+        <action android:id="@+id/action_dashboard_to_preview" app:destination="@id/previewFragment" />
+        <action android:id="@+id/action_dashboard_to_pdf" app:destination="@id/pdfExportFragment" />
+        <action android:id="@+id/action_any_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/studentsFragment"
+        android:name="com.example.examhallallocation.presentation.admin.StudentsFragment"
+        android:label="Student Management">
+        <action android:id="@+id/action_students_to_exams" app:destination="@id/examsFragment" />
+        <action android:id="@+id/action_students_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/teachersFragment"
+        android:name="com.example.examhallallocation.presentation.admin.TeachersFragment"
+        android:label="Teacher Management">
+        <action android:id="@+id/action_teachers_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/examsFragment"
+        android:name="com.example.examhallallocation.presentation.admin.ExamsFragment"
+        android:label="Exam Setup">
+        <action android:id="@+id/action_exams_to_students" app:destination="@id/studentsFragment" />
+        <action android:id="@+id/action_exams_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/hallsFragment"
+        android:name="com.example.examhallallocation.presentation.admin.HallsFragment"
+        android:label="Hall Management">
+        <action android:id="@+id/action_halls_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/generateFragment"
+        android:name="com.example.examhallallocation.presentation.generation.GenerateFragment"
+        android:label="Generate Arrangement">
+        <action
+            android:id="@+id/action_generate_to_preview"
+            app:destination="@id/previewFragment"
+            app:popUpTo="@id/adminDashboardFragment" />
+        <action android:id="@+id/action_generate_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/previewFragment"
+        android:name="com.example.examhallallocation.presentation.arrangement.PreviewFragment"
+        android:label="Arrangement Preview">
+        <action android:id="@+id/action_preview_to_pdf" app:destination="@id/pdfExportFragment" />
+        <action android:id="@+id/action_preview_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/pdfExportFragment"
+        android:name="com.example.examhallallocation.presentation.pdf.PdfExportFragment"
+        android:label="PDF Export">
+        <action android:id="@+id/action_pdf_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/teacherDashboardFragment"
+        android:name="com.example.examhallallocation.presentation.teacher.TeacherDashboardFragment"
+        android:label="My Duties">
+        <action android:id="@+id/action_teacher_to_admin" app:destination="@id/adminDashboardFragment"
+            app:popUpTo="@id/teacherDashboardFragment" app:popUpToInclusive="true" />
+        <action android:id="@+id/action_teacher_to_profile" app:destination="@id/teacherProfileFragment" />
+        <action android:id="@+id/action_teacher_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/teacherProfileFragment"
+        android:name="com.example.examhallallocation.presentation.teacher.TeacherProfileFragment"
+        android:label="Profile">
+        <action android:id="@+id/action_profile_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+</navigation>
