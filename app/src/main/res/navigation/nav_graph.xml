@@ -26,12 +26,21 @@
         android:label="Admin Dashboard">
         <action android:id="@+id/action_dashboard_to_students" app:destination="@id/studentsFragment" />
         <action android:id="@+id/action_dashboard_to_teachers" app:destination="@id/teachersFragment" />
+        <action android:id="@+id/action_dashboard_to_subjects" app:destination="@id/subjectsFragment" />
         <action android:id="@+id/action_dashboard_to_exams" app:destination="@id/examsFragment" />
         <action android:id="@+id/action_dashboard_to_halls" app:destination="@id/hallsFragment" />
         <action android:id="@+id/action_dashboard_to_generate" app:destination="@id/generateFragment" />
         <action android:id="@+id/action_dashboard_to_preview" app:destination="@id/previewFragment" />
         <action android:id="@+id/action_dashboard_to_pdf" app:destination="@id/pdfExportFragment" />
         <action android:id="@+id/action_any_to_login" app:destination="@id/loginFragment"
+            app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/subjectsFragment"
+        android:name="com.example.examhallallocation.presentation.admin.SubjectsFragment"
+        android:label="The Subjects">
+        <action android:id="@+id/action_subjects_to_login" app:destination="@id/loginFragment"
             app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
     </fragment>
 
@@ -55,7 +64,7 @@
     <fragment
         android:id="@+id/examsFragment"
         android:name="com.example.examhallallocation.presentation.admin.ExamsFragment"
-        android:label="Exam Setup">
+        android:label="Edit Exam Schedule">
         <action android:id="@+id/action_exams_to_students" app:destination="@id/studentsFragment" />
         <action android:id="@+id/action_exams_to_login" app:destination="@id/loginFragment"
             app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />

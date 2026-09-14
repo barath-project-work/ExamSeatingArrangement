@@ -30,6 +30,17 @@ data class TeacherEntity(
     val active: Boolean,
 )
 
+@Entity(tableName = "subjects", indices = [Index(value = ["code"], unique = true)])
+data class SubjectEntity(
+    @PrimaryKey val id: String,
+    val code: String,
+    val name: String,
+    val year: Int,
+    val semester: Int,
+    val department: String = "CSE",
+    val active: Boolean = true,
+)
+
 @Entity(tableName = "exams", indices = [Index(value = ["date"])])
 data class ExamEntity(
     @PrimaryKey val id: String,

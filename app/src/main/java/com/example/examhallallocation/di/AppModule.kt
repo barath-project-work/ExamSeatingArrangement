@@ -63,12 +63,13 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): ExamHallDatabase =
         Room.databaseBuilder(context, ExamHallDatabase::class.java, "grt_exam_hall.db")
-            .addMigrations(ExamHallDatabase.MIGRATION_2_3)
+            .addMigrations(ExamHallDatabase.MIGRATION_2_3, ExamHallDatabase.MIGRATION_3_4)
             .fallbackToDestructiveMigration()
             .build()
 
     @Provides fun provideStudentDao(db: ExamHallDatabase): com.example.examhallallocation.data.local.StudentDao = db.studentDao()
     @Provides fun provideTeacherDao(db: ExamHallDatabase): com.example.examhallallocation.data.local.TeacherDao = db.teacherDao()
+    @Provides fun provideSubjectDao(db: ExamHallDatabase): com.example.examhallallocation.data.local.SubjectDao = db.subjectDao()
     @Provides fun provideExamDao(db: ExamHallDatabase): com.example.examhallallocation.data.local.ExamDao = db.examDao()
     @Provides fun provideHallDao(db: ExamHallDatabase): com.example.examhallallocation.data.local.HallDao = db.hallDao()
     @Provides fun provideArrangementDao(db: ExamHallDatabase): com.example.examhallallocation.data.local.ArrangementDao = db.arrangementDao()

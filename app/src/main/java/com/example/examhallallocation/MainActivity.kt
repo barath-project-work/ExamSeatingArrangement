@@ -27,7 +27,8 @@ class MainActivity : AppCompatActivity() {
                 R.id.adminDashboardFragment -> getString(R.string.admin_dashboard_title)
                 R.id.studentsFragment -> getString(R.string.students_title)
                 R.id.teachersFragment -> getString(R.string.teachers_title)
-                R.id.examsFragment -> getString(R.string.exams_title)
+                R.id.subjectsFragment -> "The Subjects"
+                R.id.examsFragment -> "Edit Exam Schedule"
                 R.id.hallsFragment -> getString(R.string.halls_title)
                 R.id.generateFragment,
                 R.id.previewFragment,

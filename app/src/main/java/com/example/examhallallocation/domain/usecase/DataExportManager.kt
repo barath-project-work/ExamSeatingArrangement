@@ -25,6 +25,7 @@ class DataExportManager @Inject constructor(
     @ApplicationContext private val context: Context,
     private val pdfGenerator: PdfGenerator,
     private val examRepository: ExamRepository,
+    private val subjectRepository: SubjectRepository,
     private val studentRepository: StudentRepository,
     private val hallRepository: HallRepository,
     private val teacherRepository: TeacherRepository,
@@ -85,6 +86,24 @@ class DataExportManager @Inject constructor(
         }
 
         val uri = getPublicUri(targetFile, mime, "GRT_Attendance")
+        Pair(uri, fileName)
+    }
+
+    suspend fun exportSubjects(asPdf: Boolean): Pair<Uri, String> = withContext(Dispatchers.IO) {
+        val subjects = subjectRepository.observeAll().first()
+        val stamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmm"))
+        val ext = if (asPdf) "pdf" else "csv"
+        val mime = if (asPdf) "application/pdf" else "text/csv"
+        val fileName = "GRT_Curriculum_Subjects_${stamp}.$ext"
+        val targetFile = getTargetFile(fileName)
+
+        if (asPdf) {
+            pdfGenerator.generateSubjectsPdf(subjects, targetFile)
+        } else {
+            pdfGenerator.generateSubjectsCsv(subjects, targetFile)
+        }
+
+        val uri = getPublicUri(targetFile, mime, "GRT_Subjects")
         Pair(uri, fileName)
     }
 

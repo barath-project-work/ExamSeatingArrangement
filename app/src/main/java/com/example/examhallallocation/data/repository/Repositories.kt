@@ -130,6 +130,50 @@ class TeacherRepository @Inject constructor(
 }
 
 @Singleton
+class SubjectRepository @Inject constructor(
+    private val subjectDao: SubjectDao,
+) {
+    fun observeAll(): Flow<List<Subject>> = subjectDao.observeAll().map { list -> list.map { it.toDomain() } }
+
+    suspend fun getAll(): List<Subject> = subjectDao.getAll().map { it.toDomain() }
+
+    suspend fun getByYear(year: StudentYear): List<Subject> =
+        subjectDao.getByYear(year.value).map { it.toDomain() }
+
+    suspend fun upsert(subject: Subject) {
+        val final = if (subject.id.isBlank()) subject.copy(id = "sub_${subject.code.lowercase().trim()}_${subject.year.value}") else subject
+        subjectDao.insert(final.toEntity())
+    }
+
+    suspend fun upsertAll(subjects: List<Subject>) {
+        val mapped = subjects.map { s ->
+            if (s.id.isBlank()) s.copy(id = "sub_${s.code.lowercase().trim()}_${s.year.value}") else s
+        }
+        subjectDao.insertAll(mapped.map { it.toEntity() })
+    }
+
+    suspend fun delete(subject: Subject) {
+        subjectDao.delete(subject.toEntity())
+    }
+
+    suspend fun deleteById(id: String) {
+        subjectDao.deleteById(id)
+    }
+
+    suspend fun replaceAll(subjects: List<Subject>) {
+        subjectDao.deleteAll()
+        val mapped = subjects.map { s ->
+            if (s.id.isBlank()) s.copy(id = "sub_${s.code.lowercase().trim()}_${s.year.value}") else s
+        }
+        subjectDao.insertAll(mapped.map { it.toEntity() })
+    }
+
+    suspend fun clearAll() {
+        subjectDao.deleteAll()
+    }
+}
+
+@Singleton
 class ExamRepository @Inject constructor(
     private val examDao: ExamDao,
     private val sync: SyncManager,

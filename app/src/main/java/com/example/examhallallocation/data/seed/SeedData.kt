@@ -63,6 +63,36 @@ object SeedDataProvider {
     val examName = "Assessment Test - I (NOV / DEC 2026)"
 
     /**
+     * Official curriculum subjects catalog across II, III, and IV Year CSE.
+     * Pure subjects without exam dates.
+     */
+    fun subjects(): List<Subject> = listOf(
+        // II Year / Semester 3
+        Subject("sub_cs24301_2", "CS24301", "DATA STRUCTURES AND ALGORITHMS", StudentYear.YEAR_2, 3, "CSE"),
+        Subject("sub_ma24303_2", "MA24303", "DISCRETE MATHEMATICS", StudentYear.YEAR_2, 3, "CSE"),
+        Subject("sub_ec24303_2", "EC24303", "COMPUTER ORGANIZATION AND DIGITAL PR", StudentYear.YEAR_2, 3, "CSE"),
+        Subject("sub_cs24302_2", "CS24302", "PROGRAMMING IN JAVA", StudentYear.YEAR_2, 3, "CSE"),
+        Subject("sub_cs24303_2", "CS24303", "FOUNDATION OF DATASCIENCE", StudentYear.YEAR_2, 3, "CSE"),
+        Subject("sub_cs24304_2", "CS24304", "OPERATING SYSTEMS", StudentYear.YEAR_2, 3, "CSE"),
+
+        // III Year / Semester 5
+        Subject("sub_cs24502_3", "CS24502", "CLOUD COMPUTING", StudentYear.YEAR_3, 5, "CSE"),
+        Subject("sub_cs24501_3", "CS24501", "INTERNET PROGRAMMING", StudentYear.YEAR_3, 5, "CSE"),
+        Subject("sub_cs24503_3", "CS24503", "ARTIFICIAL INTELLIGENCE AND MACHINE LEARNING", StudentYear.YEAR_3, 5, "CSE"),
+        Subject("sub_cs24504_3", "CS24504", "DISTRIBUTED SYSTEMS", StudentYear.YEAR_3, 5, "CSE"),
+        Subject("sub_cs24505_3", "CS24505", "CYBER SECURITY", StudentYear.YEAR_3, 5, "CSE"),
+        Subject("sub_cs24506_3", "CS24506", "COMPILER DESIGN", StudentYear.YEAR_3, 5, "CSE"),
+
+        // IV Year / Semester 7
+        Subject("sub_ai3021_4", "AI3021", "IT IN AGRICULTURAL SYSTEM", StudentYear.YEAR_4, 7, "CSE"),
+        Subject("sub_cs3002_4", "CS3002", "OBJECT ORIENTED ANALYSIS AND DESIGN", StudentYear.YEAR_4, 7, "CSE"),
+        Subject("sub_cs3701_4", "CS3701", "BLOCKCHAIN TECHNOLOGIES", StudentYear.YEAR_4, 7, "CSE"),
+        Subject("sub_cs3702_4", "CS3702", "BIG DATA ANALYTICS", StudentYear.YEAR_4, 7, "CSE"),
+        Subject("sub_cs3703_4", "CS3703", "INTERNET OF THINGS", StudentYear.YEAR_4, 7, "CSE"),
+        Subject("sub_cs3704_4", "CS3704", "SOFTWARE TESTING", StudentYear.YEAR_4, 7, "CSE"),
+    )
+
+    /**
      * Official examination timetable matching GRT CSE Department Assessment Test - I.
      * Aligned with all 18 subjects across II, III, and IV year from college records.
      */

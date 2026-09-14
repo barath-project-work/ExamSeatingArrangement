@@ -70,6 +70,33 @@ interface TeacherDao {
 }
 
 @Dao
+interface SubjectDao {
+    @Query("SELECT * FROM subjects WHERE active = 1 ORDER BY year ASC, semester ASC, code ASC")
+    fun observeAll(): Flow<List<SubjectEntity>>
+
+    @Query("SELECT * FROM subjects WHERE active = 1 ORDER BY year ASC, semester ASC, code ASC")
+    suspend fun getAll(): List<SubjectEntity>
+
+    @Query("SELECT * FROM subjects WHERE year = :year AND active = 1 ORDER BY semester ASC, code ASC")
+    suspend fun getByYear(year: Int): List<SubjectEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(subject: SubjectEntity)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(subjects: List<SubjectEntity>)
+
+    @Delete
+    suspend fun delete(subject: SubjectEntity)
+
+    @Query("DELETE FROM subjects WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM subjects")
+    suspend fun deleteAll()
+}
+
+@Dao
 interface ExamDao {
     @Query("SELECT * FROM exams ORDER BY date ASC, year ASC")
     fun observeAll(): Flow<List<ExamEntity>>

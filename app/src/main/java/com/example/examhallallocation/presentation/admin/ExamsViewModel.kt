@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -21,9 +22,20 @@ import javax.inject.Inject
 @HiltViewModel
 class ExamsViewModel @Inject constructor(
     private val examRepository: ExamRepository,
+    private val studentRepository: com.example.examhallallocation.data.repository.StudentRepository,
+    private val subjectRepository: com.example.examhallallocation.data.repository.SubjectRepository,
     private val databaseSeeder: com.example.examhallallocation.data.seed.DatabaseSeeder,
     private val dataExportManager: com.example.examhallallocation.domain.usecase.DataExportManager,
 ) : ViewModel() {
+
+    suspend fun getActiveStudentCountForYear(year: StudentYear): Int {
+        val students = studentRepository.observeAll().first()
+        return students.count { it.year == year && it.active }
+    }
+
+    suspend fun getRegisteredSubjects(): List<com.example.examhallallocation.domain.model.Subject> {
+        return subjectRepository.getAll()
+    }
 
     init {
         viewModelScope.launch {

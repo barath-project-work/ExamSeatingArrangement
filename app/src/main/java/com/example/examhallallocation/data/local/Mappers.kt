@@ -38,6 +38,26 @@ fun Teacher.toEntity(passwordHash: String? = null): TeacherEntity = TeacherEntit
     active = active,
 )
 
+fun SubjectEntity.toDomain(): Subject = Subject(
+    id = id,
+    code = code,
+    name = name,
+    year = StudentYear.fromValue(year) ?: StudentYear.YEAR_2,
+    semester = semester,
+    department = department,
+    active = active,
+)
+
+fun Subject.toEntity(): SubjectEntity = SubjectEntity(
+    id = id,
+    code = code,
+    name = name,
+    year = year.value,
+    semester = semester,
+    department = department,
+    active = active,
+)
+
 fun ExamEntity.toDomain(): Exam = Exam(
     id = id,
     examName = examName,

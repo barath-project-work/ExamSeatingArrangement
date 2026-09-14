@@ -744,15 +744,216 @@ class PdfGenerator @Inject constructor(
         val pdfDoc = PdfDocument()
         val pageWidth = 595
         val pageHeight = 842
+        val margin = 32f
+        val left = margin
+        val right = pageWidth - margin
+        val bannerBitmap = loadBannerBitmap()
+
+        // 1. Group exams by unique date & session
+        val datesGrouped = exams.groupBy { "${it.date}|${it.session}" }
+            .toList()
+            .sortedBy { it.first }
+
+        // Determine student counts per year (Single Count for header!)
+        val countY2 = exams.firstOrNull { it.year == StudentYear.YEAR_2 }?.studentCount
+            ?: exams.filter { it.year == StudentYear.YEAR_2 }.map { it.studentCount }.maxOrNull() ?: 104
+        val countY3 = exams.firstOrNull { it.year == StudentYear.YEAR_3 }?.studentCount
+            ?: exams.filter { it.year == StudentYear.YEAR_3 }.map { it.studentCount }.maxOrNull() ?: 119
+        val countY4 = exams.firstOrNull { it.year == StudentYear.YEAR_4 }?.studentCount
+            ?: exams.filter { it.year == StudentYear.YEAR_4 }.map { it.studentCount }.maxOrNull() ?: 117
+
+        val examTitle = exams.firstOrNull()?.examName?.takeIf { it.isNotBlank() } ?: "EXAMINATION TIMETABLE & SCHEDULE"
+
+        val itemsPerPage = 14
+        val pages = datesGrouped.chunked(itemsPerPage).ifEmpty { listOf(emptyList()) }
+
+        pages.forEachIndexed { pageIndex, pageDates ->
+            val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageIndex + 1).create()
+            val page = pdfDoc.startPage(pageInfo)
+            val canvas = page.canvas
+
+            var curY = margin
+            if (bannerBitmap != null && bannerBitmap.width > 0 && bannerBitmap.height > 0) {
+                val desiredWidth = right - left
+                val desiredHeight = desiredWidth * (bannerBitmap.height.toFloat() / bannerBitmap.width.toFloat())
+                canvas.drawBitmap(bannerBitmap, null, RectF(left, curY, left + desiredWidth, curY + desiredHeight), null)
+                curY += desiredHeight + 6f
+            } else {
+                curY += 16f
+            }
+
+            val paintTitle = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorNavy
+                textSize = 12f
+                typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+                textAlign = Paint.Align.CENTER
+            }
+            canvas.drawText(examTitle.uppercase(), pageWidth / 2f, curY + 12f, paintTitle)
+            curY += 20f
+
+            val totalWidth = right - left
+            // Columns: DATE & SESS (18%), TIMING (16%), II YEAR (22%), III YEAR (22%), IV YEAR (22%)
+            val colWeights = floatArrayOf(0.18f, 0.16f, 0.22f, 0.22f, 0.22f)
+            val colWidths = colWeights.map { it * totalWidth }
+            val headers = arrayOf(
+                "DATE & SESSION",
+                "TIMING",
+                "II YEAR ($countY2 Students)",
+                "III YEAR ($countY3 Students)",
+                "IV YEAR ($countY4 Students)"
+            )
+
+            val headerHeight = 24f
+            val paintBorder = Paint().apply { color = colorBorder; style = Paint.Style.STROKE; strokeWidth = 0.8f }
+            val paintHeaderBg = Paint().apply { color = colorNavy }
+            val paintHeaderText = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE; textSize = 8.5f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD); textAlign = Paint.Align.CENTER
+            }
+            canvas.drawRect(left, curY, right, curY + headerHeight, paintHeaderBg)
+            var hx = left
+            headers.forEachIndexed { idx, h ->
+                val w = colWidths[idx]
+                canvas.drawText(h, hx + w / 2f, curY + 16f, paintHeaderText)
+                canvas.drawLine(hx, curY, hx, curY + headerHeight, paintBorder)
+                hx += w
+            }
+            canvas.drawLine(right, curY, right, curY + headerHeight, paintBorder)
+            curY += headerHeight
+
+            val rowHeight = 36f
+            val paintCode = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorNavy; textSize = 8.5f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD); textAlign = Paint.Align.CENTER
+            }
+            val paintName = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorTextDark; textSize = 7.5f; textAlign = Paint.Align.CENTER
+            }
+            val paintMeta = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = colorTextDark; textSize = 8f; textAlign = Paint.Align.CENTER
+            }
+            val paintMuted = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.LTGRAY; textSize = 9f; textAlign = Paint.Align.CENTER
+            }
+
+            pageDates.forEach { (_, dateExams) ->
+                val sampleExam = dateExams.first()
+                val dateStr = sampleExam.date
+                val sessStr = sampleExam.session
+                val timingStr = sampleExam.timing
+
+                val y2Exam = dateExams.firstOrNull { it.year == StudentYear.YEAR_2 }
+                val y3Exam = dateExams.firstOrNull { it.year == StudentYear.YEAR_3 }
+                val y4Exam = dateExams.firstOrNull { it.year == StudentYear.YEAR_4 }
+
+                canvas.drawLine(left, curY, left, curY + rowHeight, paintBorder)
+
+                // Col 0: DATE & SESSION
+                val w0 = colWidths[0]
+                canvas.drawText(dateStr, left + w0 / 2f, curY + 15f, paintCode)
+                canvas.drawText("Session: $sessStr", left + w0 / 2f, curY + 28f, paintMeta)
+                canvas.drawLine(left + w0, curY, left + w0, curY + rowHeight, paintBorder)
+
+                // Col 1: TIMING
+                val w1 = colWidths[1]
+                val x1 = left + w0
+                val timingParts = timingStr.split("TO", "to", "-")
+                if (timingParts.size >= 2) {
+                    canvas.drawText(timingParts[0].trim(), x1 + w1 / 2f, curY + 15f, paintMeta)
+                    canvas.drawText("to ${timingParts[1].trim()}", x1 + w1 / 2f, curY + 28f, paintMeta)
+                } else {
+                    canvas.drawText(timingStr.take(18), x1 + w1 / 2f, curY + 22f, paintMeta)
+                }
+                canvas.drawLine(x1 + w1, curY, x1 + w1, curY + rowHeight, paintBorder)
+
+                // Col 2: II YEAR
+                val w2 = colWidths[2]
+                val x2 = x1 + w1
+                if (y2Exam != null) {
+                    canvas.drawText(y2Exam.subjectCode, x2 + w2 / 2f, curY + 15f, paintCode)
+                    canvas.drawText(y2Exam.subjectName.take(22), x2 + w2 / 2f, curY + 28f, paintName)
+                } else {
+                    canvas.drawText("—", x2 + w2 / 2f, curY + 22f, paintMuted)
+                }
+                canvas.drawLine(x2 + w2, curY, x2 + w2, curY + rowHeight, paintBorder)
+
+                // Col 3: III YEAR
+                val w3 = colWidths[3]
+                val x3 = x2 + w2
+                if (y3Exam != null) {
+                    canvas.drawText(y3Exam.subjectCode, x3 + w3 / 2f, curY + 15f, paintCode)
+                    canvas.drawText(y3Exam.subjectName.take(22), x3 + w3 / 2f, curY + 28f, paintName)
+                } else {
+                    canvas.drawText("—", x3 + w3 / 2f, curY + 22f, paintMuted)
+                }
+                canvas.drawLine(x3 + w3, curY, x3 + w3, curY + rowHeight, paintBorder)
+
+                // Col 4: IV YEAR
+                val w4 = colWidths[4]
+                val x4 = x3 + w3
+                if (y4Exam != null) {
+                    canvas.drawText(y4Exam.subjectCode, x4 + w4 / 2f, curY + 15f, paintCode)
+                    canvas.drawText(y4Exam.subjectName.take(22), x4 + w4 / 2f, curY + 28f, paintName)
+                } else {
+                    canvas.drawText("—", x4 + w4 / 2f, curY + 22f, paintMuted)
+                }
+                canvas.drawLine(right, curY, right, curY + rowHeight, paintBorder)
+
+                canvas.drawLine(left, curY + rowHeight, right, curY + rowHeight, paintBorder)
+                curY += rowHeight
+            }
+
+            pdfDoc.finishPage(page)
+        }
+
+        FileOutputStream(outFile).use { pdfDoc.writeTo(it) }
+        pdfDoc.close()
+        return outFile
+    }
+
+    fun generateTimetableCsv(exams: List<Exam>, outFile: File): File {
+        val lines = mutableListOf<String>()
+        lines.add("GRT INSTITUTE OF ENGINEERING AND TECHNOLOGY, Tiruttani.")
+        lines.add("DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING")
+        val examTitle = exams.firstOrNull()?.examName?.takeIf { it.isNotBlank() } ?: "EXAMINATION TIMETABLE & SCHEDULE"
+        lines.add(examTitle.uppercase())
+        lines.add("")
+
+        val countY2 = exams.firstOrNull { it.year == StudentYear.YEAR_2 }?.studentCount ?: 104
+        val countY3 = exams.firstOrNull { it.year == StudentYear.YEAR_3 }?.studentCount ?: 119
+        val countY4 = exams.firstOrNull { it.year == StudentYear.YEAR_4 }?.studentCount ?: 117
+
+        lines.add("S.NO,DATE & SESSION,TIMING,II YEAR ($countY2 Students),III YEAR ($countY3 Students),IV YEAR ($countY4 Students)")
+
+        val datesGrouped = exams.groupBy { "${it.date}|${it.session}" }
+            .toList()
+            .sortedBy { it.first }
+
+        datesGrouped.forEachIndexed { i, (_, dateExams) ->
+            val sample = dateExams.first()
+            val dateSess = "${sample.date} (${sample.session})"
+            val timing = sample.timing
+            val y2 = dateExams.firstOrNull { it.year == StudentYear.YEAR_2 }?.let { "${it.subjectCode} - ${it.subjectName}" } ?: "—"
+            val y3 = dateExams.firstOrNull { it.year == StudentYear.YEAR_3 }?.let { "${it.subjectCode} - ${it.subjectName}" } ?: "—"
+            val y4 = dateExams.firstOrNull { it.year == StudentYear.YEAR_4 }?.let { "${it.subjectCode} - ${it.subjectName}" } ?: "—"
+            lines.add("${i + 1},\"$dateSess\",\"$timing\",\"$y2\",\"$y3\",\"$y4\"")
+        }
+
+        outFile.writeText(lines.joinToString("\n"), Charsets.UTF_8)
+        return outFile
+    }
+
+    fun generateSubjectsPdf(subjects: List<Subject>, outFile: File): File {
+        val pdfDoc = PdfDocument()
+        val pageWidth = 595
+        val pageHeight = 842
         val margin = 36f
         val left = margin
         val right = pageWidth - margin
         val bannerBitmap = loadBannerBitmap()
 
         val itemsPerPage = 25
-        val pages = exams.sortedWith(compareBy({ it.date }, { it.year })).chunked(itemsPerPage).ifEmpty { listOf(emptyList()) }
+        val pages = subjects.sortedWith(compareBy({ it.year.value }, { it.code })).chunked(itemsPerPage).ifEmpty { listOf(emptyList()) }
 
-        pages.forEachIndexed { pageIndex, pageExams ->
+        pages.forEachIndexed { pageIndex, pageSubs ->
             val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageIndex + 1).create()
             val page = pdfDoc.startPage(pageInfo)
             val canvas = page.canvas
@@ -773,13 +974,13 @@ class PdfGenerator @Inject constructor(
                 typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
                 textAlign = Paint.Align.CENTER
             }
-            canvas.drawText("EXAMINATION TIMETABLE & SCHEDULE", pageWidth / 2f, curY + 14f, paintTitle)
+            canvas.drawText("CURRICULUM SUBJECTS DIRECTORY", pageWidth / 2f, curY + 14f, paintTitle)
             curY += 26f
 
             val totalWidth = right - left
-            val colWeights = floatArrayOf(0.08f, 0.20f, 0.12f, 0.16f, 0.32f, 0.12f)
+            val colWeights = floatArrayOf(0.08f, 0.20f, 0.44f, 0.16f, 0.12f)
             val colWidths = colWeights.map { it * totalWidth }
-            val headers = arrayOf("S.NO", "DATE & SESS", "YEAR", "SUB CODE", "SUBJECT NAME", "COUNT")
+            val headers = arrayOf("S.NO", "SUB CODE", "SUBJECT NAME", "YEAR / SEM", "DEPT")
 
             val headerHeight = 20f
             val paintBorder = Paint().apply { color = colorBorder; style = Paint.Style.STROKE; strokeWidth = 0.8f }
@@ -801,28 +1002,27 @@ class PdfGenerator @Inject constructor(
             val rowHeight = 20f
             val paintCell = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = colorTextDark; textSize = 8.5f }
 
-            pageExams.forEachIndexed { index, e ->
+            pageSubs.forEachIndexed { index, s ->
                 val globalIndex = pageIndex * itemsPerPage + index + 1
                 val cells = arrayOf(
                     globalIndex.toString(),
-                    "${e.date} (${e.session})",
-                    "${e.year.label} S${e.semester}",
-                    e.subjectCode,
-                    e.subjectName,
-                    e.studentCount.toString()
+                    s.code,
+                    s.name,
+                    "${s.year.label} S${s.semester}",
+                    s.department
                 )
                 var cx = left
                 cells.forEachIndexed { cIdx, txt ->
                     val w = colWidths[cIdx]
                     canvas.drawLine(cx, curY, cx, curY + rowHeight, paintBorder)
                     when (cIdx) {
-                        0, 1, 2, 5 -> {
+                        0, 3, 4 -> {
                             paintCell.textAlign = Paint.Align.CENTER
                             canvas.drawText(txt, cx + w / 2f, curY + 13f, paintCell)
                         }
-                        3, 4 -> {
+                        1, 2 -> {
                             paintCell.textAlign = Paint.Align.LEFT
-                            canvas.drawText(txt.take(24), cx + 4f, curY + 13f, paintCell)
+                            canvas.drawText(txt.take(28), cx + 4f, curY + 13f, paintCell)
                         }
                     }
                     cx += w
@@ -839,14 +1039,14 @@ class PdfGenerator @Inject constructor(
         return outFile
     }
 
-    fun generateTimetableCsv(exams: List<Exam>, outFile: File): File {
+    fun generateSubjectsCsv(subjects: List<Subject>, outFile: File): File {
         val lines = mutableListOf<String>()
         lines.add("GRT INSTITUTE OF ENGINEERING AND TECHNOLOGY, Tiruttani.")
-        lines.add("EXAMINATION TIMETABLE MASTER SCHEDULE")
+        lines.add("CURRICULUM SUBJECTS DIRECTORY")
         lines.add("")
-        lines.add("S.NO,DATE,SESSION,TIME,YEAR,SEMESTER,DEPT,SUBJECT CODE,SUBJECT NAME,STUDENT COUNT")
-        exams.sortedWith(compareBy({ it.date }, { it.year })).forEachIndexed { i, e ->
-            lines.add("${i + 1},\"${e.date}\",\"${e.session}\",\"${e.timing}\",\"${e.year.label}\",\"${e.semester}\",\"${e.department}\",\"${e.subjectCode}\",\"${e.subjectName}\",\"${e.studentCount}\"")
+        lines.add("S.NO,SUBJECT CODE,SUBJECT NAME,YEAR,SEMESTER,DEPARTMENT")
+        subjects.sortedWith(compareBy({ it.year.value }, { it.code })).forEachIndexed { i, s ->
+            lines.add("${i + 1},\"${s.code}\",\"${s.name}\",\"${s.year.label}\",\"${s.semester}\",\"${s.department}\"")
         }
         outFile.writeText(lines.joinToString("\n"), Charsets.UTF_8)
         return outFile

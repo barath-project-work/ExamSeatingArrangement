@@ -26,12 +26,15 @@ import com.example.examhallallocation.domain.model.Exam
 import com.example.examhallallocation.domain.model.StudentYear
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @AndroidEntryPoint
 class ExamsFragment : Fragment() {
@@ -268,39 +271,90 @@ class ExamsFragment : Fragment() {
             .show()
     }
 
+    private fun formatTime12H(hour: Int, minute: Int): String {
+        val amPm = if (hour >= 12) "PM" else "AM"
+        val h12 = when {
+            hour == 0 -> 12
+            hour > 12 -> hour - 12
+            else -> hour
+        }
+        return String.format(Locale.ENGLISH, "%02d:%02d %s", h12, minute, amPm)
+    }
+
     private fun showAddOrEditDialog(examToEdit: Exam?) {
         val dialogBinding = DialogExamBinding.inflate(layoutInflater)
         var selectedYear = examToEdit?.year ?: StudentYear.YEAR_2
         var selectedDateStr = examToEdit?.date.orEmpty()
+        var fromTime = "08:40 AM"
+        var toTime = "10:10 AM"
 
         // Populate fields if editing
         if (examToEdit != null) {
+            val timingParts = examToEdit.timing.split("TO", "to", "-")
+            if (timingParts.size >= 2) {
+                fromTime = timingParts[0].trim()
+                toTime = timingParts[1].trim()
+            }
+            dialogBinding.etTimeFrom.setText(fromTime)
+            dialogBinding.etTimeTo.setText(toTime)
             dialogBinding.etDate.setText(examToEdit.date)
             dialogBinding.etYear.setText(examToEdit.year.label)
             dialogBinding.etSemester.setText(examToEdit.semester.toString())
             dialogBinding.etSession.setText(examToEdit.session)
-            dialogBinding.etTiming.setText(examToEdit.timing)
             dialogBinding.etDepartment.setText(examToEdit.department)
             dialogBinding.etSubjectCode.setText(examToEdit.subjectCode)
             dialogBinding.etSubjectName.setText(examToEdit.subjectName)
             dialogBinding.etStudentCount.setText(examToEdit.studentCount.toString())
         } else {
+            dialogBinding.etTimeFrom.setText(fromTime)
+            dialogBinding.etTimeTo.setText(toTime)
             dialogBinding.etYear.setText(selectedYear.label)
             dialogBinding.etSemester.setText("3")
             dialogBinding.etSession.setText("FN")
-            dialogBinding.etTiming.setText("8:40 a.m. TO 10:10 a.m.")
             dialogBinding.etDepartment.setText("CSE")
-            dialogBinding.etStudentCount.setText("104")
+            viewLifecycleOwner.lifecycleScope.launch {
+                val count = viewModel.getActiveStudentCountForYear(selectedYear)
+                dialogBinding.etStudentCount.setText(if (count > 0) count.toString() else "104")
+            }
         }
 
-        // Year picker
+        // Clock Picker: From Time
+        dialogBinding.etTimeFrom.setOnClickListener {
+            val picker = MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_12H)
+                .setHour(8)
+                .setMinute(40)
+                .setTitleText("Select Exam Start Time (From)")
+                .build()
+            picker.addOnPositiveButtonClickListener {
+                fromTime = formatTime12H(picker.hour, picker.minute)
+                dialogBinding.etTimeFrom.setText(fromTime)
+            }
+            picker.show(childFragmentManager, "timePickerFrom")
+        }
+
+        // Clock Picker: To Time
+        dialogBinding.etTimeTo.setOnClickListener {
+            val picker = MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_12H)
+                .setHour(10)
+                .setMinute(10)
+                .setTitleText("Select Exam End Time (To)")
+                .build()
+            picker.addOnPositiveButtonClickListener {
+                toTime = formatTime12H(picker.hour, picker.minute)
+                dialogBinding.etTimeTo.setText(toTime)
+            }
+            picker.show(childFragmentManager, "timePickerTo")
+        }
+
+        // Year picker (auto-updates dynamic student count)
         dialogBinding.etYear.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle(getString(R.string.hint_year))
                 .setSingleChoiceItems(yearOptions.map { it.label }.toTypedArray(), yearOptions.indexOf(selectedYear)) { dialog, which ->
                     selectedYear = yearOptions[which]
                     dialogBinding.etYear.setText(selectedYear.label)
-                    // Auto-suggest semester based on selected year
                     val suggestedSem = when (selectedYear) {
                         StudentYear.YEAR_1 -> 1
                         StudentYear.YEAR_2 -> 3
@@ -309,9 +363,35 @@ class ExamsFragment : Fragment() {
                         else -> 3
                     }
                     dialogBinding.etSemester.setText(suggestedSem.toString())
+                    // Auto-calculate dynamic student count from database
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        val count = viewModel.getActiveStudentCountForYear(selectedYear)
+                        dialogBinding.etStudentCount.setText(if (count > 0) count.toString() else "104")
+                    }
                     dialog.dismiss()
                 }
                 .show()
+        }
+
+        // Curriculum Subject quick-selector
+        dialogBinding.etSubjectCode.setOnClickListener {
+            viewLifecycleOwner.lifecycleScope.launch {
+                val registeredSubs = viewModel.getRegisteredSubjects().filter { it.year == selectedYear }
+                if (registeredSubs.isNotEmpty()) {
+                    val subjectLabels = registeredSubs.map { "[${it.code}] ${it.name}" }.toTypedArray()
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Select Curriculum Subject")
+                        .setItems(subjectLabels) { _, whichSub ->
+                            val chosen = registeredSubs[whichSub]
+                            dialogBinding.etSubjectCode.setText(chosen.code)
+                            dialogBinding.etSubjectName.setText(chosen.name)
+                            dialogBinding.etSemester.setText(chosen.semester.toString())
+                            dialogBinding.etDepartment.setText(chosen.department)
+                        }
+                        .setNegativeButton(getString(R.string.action_cancel), null)
+                        .show()
+                }
+            }
         }
 
         // Date picker
@@ -337,9 +417,9 @@ class ExamsFragment : Fragment() {
                 val code = dialogBinding.etSubjectCode.text?.toString()?.trim().orEmpty()
                 val name = dialogBinding.etSubjectName.text?.toString()?.trim().orEmpty()
                 val session = dialogBinding.etSession.text?.toString()?.trim().orEmpty().ifBlank { "FN" }
-                val timing = dialogBinding.etTiming.text?.toString()?.trim().orEmpty().ifBlank { "8:40 a.m. TO 10:10 a.m." }
+                val timing = "$fromTime to $toTime"
                 val dept = dialogBinding.etDepartment.text?.toString()?.trim().orEmpty().ifBlank { "CSE" }
-                val count = dialogBinding.etStudentCount.text?.toString()?.toIntOrNull() ?: 0
+                val count = dialogBinding.etStudentCount.text?.toString()?.toIntOrNull() ?: 104
 
                 if (examToEdit != null) {
                     viewModel.updateExam(

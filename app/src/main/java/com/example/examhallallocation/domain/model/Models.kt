@@ -53,6 +53,16 @@ data class Teacher(
     val active: Boolean = true,
 )
 
+data class Subject(
+    val id: String,
+    val code: String,
+    val name: String,
+    val year: StudentYear,
+    val semester: Int,
+    val department: String = "CSE",
+    val active: Boolean = true,
+)
+
 data class Exam(
     val id: String,
     val examName: String,

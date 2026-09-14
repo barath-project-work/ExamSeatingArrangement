@@ -103,9 +103,17 @@ class DatabaseSeeder @Inject constructor(
                         invigilatorAssignments = arrangement.invigilatorAssignments.map { it.toEntity(arrangement.id) },
                     )
                 }
+                val hasSubjects = database.subjectDao().observeAll().first().isNotEmpty()
+                if (!hasSubjects) {
+                    database.subjectDao().insertAll(SeedDataProvider.subjects().map { it.toEntity() })
+                }
                 android.util.Log.i(TAG, "Hydrated ${snapshot.students.size} students, ${snapshot.exams.size} exams from Cloud Firestore")
                 true
             } else {
+                val hasSubjects = database.subjectDao().observeAll().first().isNotEmpty()
+                if (!hasSubjects) {
+                    database.subjectDao().insertAll(SeedDataProvider.subjects().map { it.toEntity() })
+                }
                 false
             }
         }.getOrElse { e ->
@@ -163,6 +171,13 @@ class DatabaseSeeder @Inject constructor(
         if (!hasHalls) {
             database.hallDao().run {
                 SeedDataProvider.halls().forEach { insert(it.toEntity()) }
+            }
+        }
+
+        val hasSubjects = database.subjectDao().observeAll().first().isNotEmpty()
+        if (!hasSubjects) {
+            database.subjectDao().run {
+                insertAll(SeedDataProvider.subjects().map { it.toEntity() })
             }
         }
 
