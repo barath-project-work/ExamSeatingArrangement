@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="20dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:id="@+id/tvPasteHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Copy rows from your spreadsheet or CSV and paste below."
+        android:textColor="@color/text_secondary"
+        android:textSize="13sp" />
+
+    <!-- Utility Bar: Line counter, Paste button, Clear button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvLineCount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0 rows detected"
+            android:textColor="@color/text_disabled"
+            android:textSize="12sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPasteClipboard"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="Paste"
+            android:textColor="@color/navy_primary"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_document"
+            app:iconSize="14dp"
+            app:iconTint="@color/navy_primary" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClearText"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:layout_marginStart="4dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:text="Clear"
+            android:textColor="@color/status_red_solid"
+            android:textSize="12sp"
+            app:icon="@drawable/ic_delete"
+            app:iconSize="14dp"
+            app:iconTint="@color/status_red_solid" />
+    </LinearLayout>
+
+    <!-- Scrollable container with fixed height so buttons NEVER get pushed off-screen -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="180dp"
+        android:layout_marginTop="4dp"
+        app:cardBackgroundColor="@color/field_bg"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/stroke_light"
+        app:strokeWidth="1dp">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:scrollbars="vertical">
+
+            <EditText
+                android:id="@+id/etPasteInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@null"
+                android:fontFamily="monospace"
+                android:gravity="top|start"
+                android:hint="Paste spreadsheet or CSV rows here..."
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:padding="12dp"
+                android:scrollHorizontally="false"
+                android:textColor="@color/text_primary"
+                android:textColorHint="@color/text_disabled"
+                android:textSize="12sp" />
+        </ScrollView>
+    </com.google.android.material.card.MaterialCardView>
+
+    <TextView
+        android:id="@+id/tvFormatGuide"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="Columns are auto-detected (comma or tab separated)."
+        android:textColor="@color/text_disabled"
+        android:textSize="11sp" />
+</LinearLayout>

@@ -76,7 +76,7 @@ class AdminDashboardViewModel @Inject constructor(
     ) { students, teachers, halls, subjects ->
         CoreCounts(
             totalStudents = students.count { it.active },
-            activeTeachers = teachers.count { it.active && it.role != com.example.examhallallocation.domain.model.UserRole.HOD },
+            activeTeachers = teachers.count { it.active && it.role != com.example.examhallallocation.domain.model.UserRole.ADMIN },
             activeHalls = halls.count { it.active },
             totalSubjects = subjects.count { it.active },
         )
@@ -128,7 +128,8 @@ class AdminDashboardViewModel @Inject constructor(
         viewModelScope.launch {
             examRepository.clearAll()
             examRepository.addAll(SeedDataProvider.exams())
-            onDone(true, "Assessment Test - I timetable loaded. Dates successfully generated!")
+            arrangementRepository.clearAll()
+            onDone(true, "Assessment Test - I timetable loaded. Ready to generate hall allocations!")
         }
     }
 

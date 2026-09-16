@@ -63,7 +63,13 @@ object AppModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): ExamHallDatabase =
         Room.databaseBuilder(context, ExamHallDatabase::class.java, "grt_exam_hall.db")
-            .addMigrations(ExamHallDatabase.MIGRATION_2_3, ExamHallDatabase.MIGRATION_3_4)
+            .addMigrations(
+                ExamHallDatabase.MIGRATION_2_3,
+                ExamHallDatabase.MIGRATION_3_4,
+                ExamHallDatabase.MIGRATION_4_5,
+                ExamHallDatabase.MIGRATION_5_6,
+                ExamHallDatabase.MIGRATION_6_7,
+            )
             .fallbackToDestructiveMigration()
             .build()
 

@@ -678,7 +678,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Export Seating Arrangement (PDF)"
+                            android:text="Seating &amp; Faculty Duty Allocation"
                             android:textColor="@color/text_primary"
                             android:textSize="@dimen/text_body"
                             android:textStyle="bold" />
@@ -687,7 +687,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Official format with college banner &amp; institutional signatures"
+                            android:text="Live hall seating, teacher invigilation duty roster, &amp; PDF/Excel export"
                             android:textColor="@color/text_secondary"
                             android:textSize="11sp" />
                     </LinearLayout>

@@ -201,16 +201,41 @@ class SubjectsFragment : Fragment() {
     }
 
     private fun showPasteDialog() {
-        val input = EditText(requireContext()).apply {
-            hint = "Paste rows here...\nFormat: Code, Name, Year, Semester, Department\nExample: CS24301, DATA STRUCTURES, 2nd Year, 3, CSE"
-            minLines = 6
-            setPadding(36, 28, 36, 28)
+        val dialogBinding = com.example.examhallallocation.databinding.DialogPasteDataBinding.inflate(layoutInflater)
+        dialogBinding.tvPasteHint.text = "Copy subject rows from your syllabus or curriculum spreadsheet and paste below."
+        dialogBinding.etPasteInput.hint = "Paste rows here...\nFormat: Code, Name, Year, Semester, Department\nExample: CS24301, DATA STRUCTURES, 2nd Year, 3, CSE"
+        dialogBinding.tvFormatGuide.text = "Format: SubjectCode, SubjectName, Year, Semester, Department"
+
+        dialogBinding.etPasteInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val lines = s?.toString()?.lineSequence()?.filter { it.isNotBlank() }?.count() ?: 0
+                dialogBinding.tvLineCount.text = "$lines subjects detected"
+            }
+        })
+
+        dialogBinding.btnPasteClipboard.setOnClickListener {
+            val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+            val clipData = clipboard?.primaryClip
+            if (clipData != null && clipData.itemCount > 0) {
+                val pasteText = clipData.getItemAt(0).coerceToText(requireContext()).toString()
+                dialogBinding.etPasteInput.setText(pasteText)
+                dialogBinding.etPasteInput.setSelection(dialogBinding.etPasteInput.text.length)
+            } else {
+                android.widget.Toast.makeText(requireContext(), "Clipboard is empty", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
+
+        dialogBinding.btnClearText.setOnClickListener {
+            dialogBinding.etPasteInput.setText("")
+        }
+
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Paste Subject Records")
-            .setView(input)
+            .setView(dialogBinding.root)
             .setPositiveButton("Import") { _, _ ->
-                val text = input.text.toString().trim()
+                val text = dialogBinding.etPasteInput.text.toString().trim()
                 if (text.isNotBlank()) viewModel.importCsv(text, replaceExisting = false)
             }
             .setNegativeButton(getString(R.string.action_cancel), null)

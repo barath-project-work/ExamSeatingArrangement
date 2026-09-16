@@ -1081,7 +1081,6 @@ object SmartDataExtractor {
     private fun parseRole(raw: String): UserRole {
         val clean = raw.trim().uppercase(Locale.ROOT)
         return when {
-            clean.contains("HOD") || clean.contains("HEAD") -> UserRole.HOD
             clean.contains("COORD") || clean.contains("CELL") -> UserRole.EXAM_CELL_COORDINATOR
             clean.contains("ADMIN") -> UserRole.ADMIN
             else -> UserRole.NORMAL_TEACHER

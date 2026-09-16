@@ -57,6 +57,7 @@
         android:id="@+id/teachersFragment"
         android:name="com.example.examhallallocation.presentation.admin.TeachersFragment"
         android:label="Teacher Management">
+        <action android:id="@+id/action_teachers_to_pdf" app:destination="@id/pdfExportFragment" />
         <action android:id="@+id/action_teachers_to_login" app:destination="@id/loginFragment"
             app:popUpTo="@id/nav_graph" app:popUpToInclusive="true" />
     </fragment>

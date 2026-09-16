@@ -8,6 +8,7 @@ import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.examhallallocation.R
 import com.example.examhallallocation.databinding.DialogTeacherBinding
@@ -27,7 +28,7 @@ class TeachersFragment : Fragment() {
 
     private lateinit var adapter: TeachersAdapter
 
-    private val roleOptions = listOf(UserRole.NORMAL_TEACHER, UserRole.EXAM_CELL_COORDINATOR, UserRole.HOD, UserRole.ADMIN)
+    private val roleOptions = listOf(UserRole.NORMAL_TEACHER, UserRole.EXAM_CELL_COORDINATOR)
 
     private val pickFileLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.GetContent()) { uri: android.net.Uri? ->
         uri?.let { readCsv(it) }
@@ -45,9 +46,11 @@ class TeachersFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        adapter = TeachersAdapter(onEdit = ::showEditDialog, onDelete = ::confirmDelete)
+        adapter = TeachersAdapter(onEdit = ::showEditDialog, onDelete = ::confirmDelete, onDutyClick = ::showTeacherDutyDialog)
         binding.recyclerTeachers.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerTeachers.adapter = adapter
+        binding.btnViewDutyAllocation.setOnClickListener { findNavController().navigate(R.id.action_teachers_to_pdf) }
+        binding.btnAllDutyCounts.setOnClickListener { showAllDutyCountsDialog() }
         binding.btnExportTeachers.setOnClickListener { showExportTeachersDialog() }
         binding.btnAddTeacher.setOnClickListener { showEditDialog(null) }
         binding.btnImportTeachers.setOnClickListener { showImportChoiceDialog() }
@@ -57,6 +60,20 @@ class TeachersFragment : Fragment() {
                 adapter.submitList(teachers)
                 binding.emptyState.root.isVisible = teachers.isEmpty()
                 binding.recyclerTeachers.isVisible = teachers.isNotEmpty()
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.dutySummaries.collect { summaries ->
+                val exam = viewModel.activeExamName.value
+                adapter.setDutySummaries(summaries, exam)
+
+                val totalDuties = summaries.sumOf { it.totalDuties }
+                val eligibleTeachers = summaries.count { it.active }
+                val avg = if (eligibleTeachers > 0) (totalDuties.toDouble() / eligibleTeachers).let { String.format("%.1f", it) } else "0"
+
+                binding.tvDutyOverviewTitle.text = "Faculty Duty Allocation · $exam"
+                binding.tvDutyOverviewSubtitle.text = "$totalDuties Total Duties · $eligibleTeachers Teaching Faculty (Avg ~$avg duties/teacher)"
             }
         }
 
@@ -186,23 +203,104 @@ class TeachersFragment : Fragment() {
     }
 
     private fun showPasteDialog() {
-        val input = android.widget.EditText(requireContext()).apply {
-            hint = "Paste Excel rows or CSV text here...\n(Columns: Name, Username, Password, Role)"
-            minLines = 6
-            setPadding(36, 28, 36, 28)
+        val dialogBinding = com.example.examhallallocation.databinding.DialogPasteDataBinding.inflate(layoutInflater)
+        dialogBinding.tvPasteHint.text = "Copy rows from your Excel sheet or CSV and paste below. The app will automatically detect columns and provision login accounts."
+        dialogBinding.etPasteInput.hint = "Paste Excel rows or CSV text here...\n(Columns: Name, Username, Password, Role)"
+        dialogBinding.tvFormatGuide.text = "Format: Name, Username, Password, Designation"
+
+        dialogBinding.etPasteInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {
+                val lines = s?.toString()?.lineSequence()?.filter { it.isNotBlank() }?.count() ?: 0
+                dialogBinding.tvLineCount.text = "$lines rows detected"
+            }
+        })
+
+        dialogBinding.btnPasteClipboard.setOnClickListener {
+            val clipboard = requireContext().getSystemService(android.content.Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+            val clipData = clipboard?.primaryClip
+            if (clipData != null && clipData.itemCount > 0) {
+                val pasteText = clipData.getItemAt(0).coerceToText(requireContext()).toString()
+                dialogBinding.etPasteInput.setText(pasteText)
+                dialogBinding.etPasteInput.setSelection(dialogBinding.etPasteInput.text.length)
+            } else {
+                android.widget.Toast.makeText(requireContext(), "Clipboard is empty", android.widget.Toast.LENGTH_SHORT).show()
+            }
         }
+
+        dialogBinding.btnClearText.setOnClickListener {
+            dialogBinding.etPasteInput.setText("")
+        }
+
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Paste Faculty Data")
-            .setMessage("Copy rows from your Excel sheet or CSV and paste below. The app will automatically detect columns and provision login accounts.")
-            .setView(input)
+            .setView(dialogBinding.root)
             .setPositiveButton("Import Data") { _, _ ->
-                val text = input.text.toString().trim()
+                val text = dialogBinding.etPasteInput.text.toString().trim()
                 if (text.isNotBlank()) {
                     viewModel.importCsv(text)
                 }
             }
             .setNegativeButton(getString(R.string.action_cancel), null)
             .show()
+    }
+
+    private fun showAllDutyCountsDialog() {
+        val summaries = viewModel.dutySummaries.value
+        if (summaries.isEmpty()) {
+            android.widget.Toast.makeText(requireContext(), "No faculty duty records available yet.", android.widget.Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val exam = viewModel.activeExamName.value
+        val items = summaries.map { summary ->
+            val hallsSummary = summary.assignments.map { "${it.date.takeLast(5)}: ${it.hallRoomNumber}" }.joinToString(", ")
+            val hallsStr = if (hallsSummary.isNotBlank()) " ($hallsSummary)" else ""
+            "${summary.teacherName} (${summary.role.label})\n👉 ${summary.totalDuties} Duties in $exam$hallsStr"
+        }.toTypedArray()
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("All Faculty Duty Counts · $exam")
+            .setItems(items) { _, which ->
+                val selected = summaries.getOrNull(which) ?: return@setItems
+                showTeacherDutyBreakdown(selected)
+            }
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
+    private fun showTeacherDutyDialog(teacher: Teacher, dutySummary: com.example.examhallallocation.domain.model.TeacherDutySummary?) {
+        if (dutySummary == null) {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(teacher.name)
+                .setMessage("Role: ${teacher.role.label}\nUsername: @${teacher.username}\nStatus: ${if (teacher.active) "Active" else "Inactive"}\n\nNo invigilation duties assigned for administrative accounts.")
+                .setPositiveButton("OK", null)
+                .show()
+            return
+        }
+        showTeacherDutyBreakdown(dutySummary)
+    }
+
+    private fun showTeacherDutyBreakdown(summary: com.example.examhallallocation.domain.model.TeacherDutySummary) {
+        val details = if (summary.assignments.isEmpty()) {
+            "No active duties assigned yet for this exam."
+        } else {
+            summary.assignments.mapIndexed { idx, duty ->
+                "${idx + 1}. Date: ${duty.date}\n   Hall: ${duty.hallRoomNumber} (${duty.floor}, ${duty.block})\n   Session: ${duty.session}"
+            }.joinToString("\n\n")
+        }
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("${summary.teacherName} · ${summary.totalDuties} Total Duties")
+            .setMessage("Exam: ${summary.examName}\nRole: ${summary.role.label}\n\nAssigned Invigilation Duties:\n\n$details")
+            .setPositiveButton("Close", null)
+            .show()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.loadDutySummaries()
     }
 
     override fun onDestroyView() {

@@ -17,7 +17,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         InvigilatorAssignmentEntity::class,
         SyncQueueItemEntity::class,
     ],
-    version = 4,
+    version = 7,
     exportSchema = false,
 )
 abstract class ExamHallDatabase : RoomDatabase() {
@@ -55,6 +55,34 @@ abstract class ExamHallDatabase : RoomDatabase() {
                     """.trimIndent()
                 )
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_subjects_code ON subjects (code)")
+            }
+        }
+
+        val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DELETE FROM hall_assignments")
+                db.execSQL("DELETE FROM invigilator_assignments")
+                db.execSQL("DELETE FROM arrangements")
+            }
+        }
+
+        val MIGRATION_5_6 = object : Migration(5, 6) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Purge any legacy arrangements & eliminate any HOD entries
+                db.execSQL("DELETE FROM hall_assignments")
+                db.execSQL("DELETE FROM invigilator_assignments")
+                db.execSQL("DELETE FROM arrangements")
+                db.execSQL("DELETE FROM teachers WHERE role = 'HOD'")
+            }
+        }
+
+        val MIGRATION_6_7 = object : Migration(6, 7) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Purge stale arrangements and old student gaps so fresh 1..120 cohorts are re-seeded
+                db.execSQL("DELETE FROM hall_assignments")
+                db.execSQL("DELETE FROM invigilator_assignments")
+                db.execSQL("DELETE FROM arrangements")
+                db.execSQL("DELETE FROM students")
             }
         }
     }

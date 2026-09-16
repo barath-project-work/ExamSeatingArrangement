@@ -53,28 +53,39 @@ class PdfGenerator @Inject constructor(
 
         val hallById = halls.associateBy { it.id }
 
-        // Extract flattened rows for rendering
-        val rowsToPrint = mutableListOf<ArrangementRow>()
-        var globalSno = 1
+        val bannerBitmap = runCatching {
+            val opts = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.RGB_565 }
+            BitmapFactory.decodeResource(context.resources, R.drawable.grt_banner, opts)
+        }.getOrNull()
 
-        arrangements.sortedBy { it.date }.forEach { arr ->
-            val byHall = arr.hallAssignments.groupBy { it.hallId }
-                .toSortedMap(compareBy { hallById[it]?.roomNumber ?: it })
+        val rowsPerPage = 14
+        val pagesByArrangement = arrangements.sortedBy { it.date }.map { arr ->
+            val byHall = linkedMapOf<String, MutableList<HallAssignment>>()
+            arr.hallAssignments.forEach { ha ->
+                byHall.getOrPut(ha.hallId) { mutableListOf() }.add(ha)
+            }
 
+            val rowsForArr = mutableListOf<ArrangementRow>()
+            var sno = 1
             byHall.forEach { (hallId, blocks) ->
                 val hall = hallById[hallId]
                 val hallTotal = blocks.sumOf { it.studentIds.size }
                 blocks.forEachIndexed { blockIndex, block ->
                     val regNumbers = block.studentIds.map { it.removePrefix("stu_") }
-                    rowsToPrint.add(
+                    val fromRoll = regNumbers.firstOrNull()?.takeLast(3)?.toIntOrNull() ?: block.startPosition
+                    val toRoll = regNumbers.lastOrNull()?.takeLast(3)?.toIntOrNull() ?: block.endPosition
+                    val regFromStr = if (regNumbers.isNotEmpty()) "${regNumbers.first()} ($fromRoll)" else "-"
+                    val regToStr = if (regNumbers.isNotEmpty()) "${regNumbers.last()} ($toRoll)" else "-"
+
+                    rowsForArr.add(
                         ArrangementRow(
-                            sno = if (blockIndex == 0) globalSno.toString() else "",
+                            sno = if (blockIndex == 0) sno.toString() else "",
                             hallNumber = if (blockIndex == 0) (hall?.roomNumber ?: hallId) else "",
                             floor = if (blockIndex == 0) (hall?.floor?.toString().orEmpty()) else "",
                             branch = if (blockIndex == 0) "CSE" else "",
                             yearSem = "${block.year.label} / Sem ${block.semester}",
-                            regFrom = regNumbers.firstOrNull() ?: "-",
-                            regTo = regNumbers.lastOrNull() ?: "-",
+                            regFrom = regFromStr,
+                            regTo = regToStr,
                             count = block.studentIds.size.toString(),
                             hallTotal = if (blockIndex == 0) hallTotal.toString() else "",
                             isNewHall = blockIndex == 0,
@@ -83,41 +94,40 @@ class PdfGenerator @Inject constructor(
                         )
                     )
                 }
-                globalSno++
+                sno++
             }
+            val chunks = if (rowsForArr.isNotEmpty()) rowsForArr.chunked(rowsPerPage) else listOf(emptyList())
+            arr to chunks
         }
 
-        // Layout parameters
-        val rowsPerPage = 14
-        val chunks = if (rowsToPrint.isNotEmpty()) rowsToPrint.chunked(rowsPerPage) else listOf(emptyList())
-        val totalPages = chunks.size
-
-        val bannerBitmap = runCatching {
-            val opts = BitmapFactory.Options().apply { inPreferredConfig = Bitmap.Config.RGB_565 }
-            BitmapFactory.decodeResource(context.resources, R.drawable.grt_banner, opts)
-        }.getOrNull()
+        val totalPages = pagesByArrangement.sumOf { it.second.size }.coerceAtLeast(1)
+        var globalPageNumber = 1
 
         try {
-            chunks.forEachIndexed { pageIndex, pageRows ->
-                val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageIndex + 1).create()
-                val page = pdfDoc.startPage(pageInfo)
-                val canvas = page.canvas
+            pagesByArrangement.forEach { (arr, chunks) ->
+                val totalArrPages = chunks.size
+                chunks.forEachIndexed { pageIndexInArr, pageRows ->
+                    val pageInfo = PdfDocument.PageInfo.Builder(pageWidth, pageHeight, globalPageNumber).create()
+                    val page = pdfDoc.startPage(pageInfo)
+                    val canvas = page.canvas
 
-                // 1. Draw Header
-                val contentTop = drawLandscapeHeader(canvas, pageWidth.toFloat(), margin, arrangements, bannerBitmap)
+                    // 1. Draw Header with specific arrangement date & exam info
+                    val contentTop = drawLandscapeHeader(canvas, pageWidth.toFloat(), margin, arr, bannerBitmap)
 
-                // 2. Draw Table
-                val tableBottom = drawLandscapeTable(canvas, margin, contentTop, pageWidth.toFloat() - margin, pageRows)
+                    // 2. Draw Table
+                    drawLandscapeTable(canvas, margin, contentTop, pageWidth.toFloat() - margin, pageRows)
 
-                // 3. Draw Signatures on last page or bottom
-                if (pageIndex == totalPages - 1) {
-                    drawLandscapeSignatures(canvas, margin, pageWidth.toFloat() - margin, pageHeight - 36f)
+                    // 3. Draw Signatures on last page of this arrangement
+                    if (pageIndexInArr == totalArrPages - 1) {
+                        drawLandscapeSignatures(canvas, margin, pageWidth.toFloat() - margin, pageHeight - 36f)
+                    }
+
+                    // 4. Page number footer
+                    drawFooter(canvas, pageWidth.toFloat(), pageHeight.toFloat(), globalPageNumber, totalPages)
+
+                    pdfDoc.finishPage(page)
+                    globalPageNumber++
                 }
-
-                // 4. Page number footer
-                drawFooter(canvas, pageWidth.toFloat(), pageHeight.toFloat(), pageIndex + 1, totalPages)
-
-                pdfDoc.finishPage(page)
             }
 
             FileOutputStream(outFile).use { fos ->
@@ -127,6 +137,58 @@ class PdfGenerator @Inject constructor(
             runCatching { bannerBitmap?.recycle() }
             pdfDoc.close()
         }
+        return outFile
+    }
+
+    /**
+     * Generates a 2-row-per-hall CSV spreadsheet matching the institutional examination seating allocation layout.
+     */
+    fun generateSeatingCsv(
+        arrangements: List<Arrangement>,
+        halls: List<Hall>,
+        outFile: File,
+    ): File {
+        val hallById = halls.associateBy { it.id }
+        val lines = mutableListOf<String>()
+
+        lines.add("GRT INSTITUTE OF ENGINEERING AND TECHNOLOGY (Autonomous)")
+        lines.add("DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING")
+        lines.add("EXAMINATION SEATING ARRANGEMENT ALLOCATION")
+        lines.add("")
+        lines.add("S.No,Hall No,Floor,Dept,Year / Sem,Reg No From,Reg No To,Count,Total")
+
+        arrangements.sortedBy { it.date }.forEach { arr ->
+            val byHall = linkedMapOf<String, MutableList<HallAssignment>>()
+            arr.hallAssignments.forEach { ha ->
+                byHall.getOrPut(ha.hallId) { mutableListOf() }.add(ha)
+            }
+
+            var sno = 1
+            byHall.forEach { (hallId, blocks) ->
+                val hall = hallById[hallId]
+                val hallTotal = blocks.sumOf { it.studentIds.size }
+                blocks.forEachIndexed { blockIndex, block ->
+                    val regNumbers = block.studentIds.map { it.removePrefix("stu_") }
+                    val fromRoll = regNumbers.firstOrNull()?.takeLast(3)?.toIntOrNull() ?: block.startPosition
+                    val toRoll = regNumbers.lastOrNull()?.takeLast(3)?.toIntOrNull() ?: block.endPosition
+                    val regFromStr = if (regNumbers.isNotEmpty()) "${regNumbers.first()} ($fromRoll)" else "-"
+                    val regToStr = if (regNumbers.isNotEmpty()) "${regNumbers.last()} ($toRoll)" else "-"
+
+                    val sNoStr = if (blockIndex == 0) sno.toString() else ""
+                    val hallNumStr = if (blockIndex == 0) (hall?.roomNumber ?: hallId) else ""
+                    val floorStr = if (blockIndex == 0) (hall?.floor?.toString().orEmpty()) else ""
+                    val deptStr = "CSE"
+                    val yearSemStr = "${block.year.label} / Sem ${block.semester}"
+                    val countStr = block.studentIds.size.toString()
+                    val totalStr = if (blockIndex == 0) hallTotal.toString() else ""
+
+                    lines.add("\"$sNoStr\",\"$hallNumStr\",\"$floorStr\",\"$deptStr\",\"$yearSemStr\",\"$regFromStr\",\"$regToStr\",\"$countStr\",\"$totalStr\"")
+                }
+                sno++
+            }
+        }
+
+        outFile.writeText(lines.joinToString("\n"), Charsets.UTF_8)
         return outFile
     }
 
@@ -149,7 +211,7 @@ class PdfGenerator @Inject constructor(
         canvas: Canvas,
         width: Float,
         margin: Float,
-        arrangements: List<Arrangement>,
+        arrangement: Arrangement,
         bannerBitmap: Bitmap?
     ): Float {
         var y = margin
@@ -180,12 +242,13 @@ class PdfGenerator @Inject constructor(
         canvas.drawText("GRT INSTITUTE OF ENGINEERING AND TECHNOLOGY (Autonomous)", titleX, y + 16f, paintTitle)
         canvas.drawText("DEPARTMENT OF COMPUTER SCIENCE AND ENGINEERING · EXAM SEATING ALLOCATION", titleX, y + 32f, paintSub)
 
-        val dates = arrangements.mapNotNull { runCatching { LocalDate.parse(it.date) }.getOrNull() }
-        val dateRangeStr = if (dates.isNotEmpty()) {
-            val fmt = DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.ENGLISH)
-            "Exam Period: ${dates.minOrNull()?.format(fmt)} to ${dates.maxOrNull()?.format(fmt)}"
-        } else "Exam Hall Seating Plan"
-        canvas.drawText(dateRangeStr, titleX, y + 46f, paintSub)
+        val dateFormatted = runCatching {
+            val parsed = LocalDate.parse(arrangement.date)
+            parsed.format(DateTimeFormatter.ofPattern("dd MMM yyyy (EEEE)", Locale.ENGLISH))
+        }.getOrDefault(arrangement.date)
+
+        val examLine = "${arrangement.examName.ifBlank { "ASSESSMENT TEST" }} · Date: $dateFormatted · Session: FORENOON (FN)"
+        canvas.drawText(examLine, titleX, y + 46f, paintSub)
 
         return y + 58f
     }
@@ -240,48 +303,92 @@ class PdfGenerator @Inject constructor(
         val rowHeight = 20f
         var zebra = false
 
+        val hallGroups = mutableListOf<MutableList<ArrangementRow>>()
         rows.forEach { row ->
-            if (row.isNewHall) zebra = !zebra
+            if (row.isNewHall || hallGroups.isEmpty()) {
+                hallGroups.add(mutableListOf(row))
+            } else {
+                hallGroups.last().add(row)
+            }
+        }
+
+        hallGroups.forEach { hallRows ->
+            zebra = !zebra
             val bg = if (zebra) colorZebra else Color.WHITE
             paintBg.color = bg
 
-            canvas.drawRect(left, curY, right, curY + rowHeight, paintBg)
-            canvas.drawRect(left, curY, right, curY + rowHeight, paintBorder)
+            val hallHeight = hallRows.size * rowHeight
+            canvas.drawRect(left, curY, right, curY + hallHeight, paintBg)
+            canvas.drawRect(left, curY, right, curY + hallHeight, paintBorder)
 
-            val cells = arrayOf(
-                row.sno,
-                row.hallNumber,
-                row.floor,
-                row.branch,
-                row.yearSem,
-                row.regFrom,
-                row.regTo,
-                row.count,
-                row.hallTotal
-            )
+            val first = hallRows.first()
+            val centerY = curY + (hallHeight / 2f) + 3.5f
 
+            // 1. Draw vertically merged hall metadata: S.No, Hall No, Floor, Dept, Total
             var cellX = left
-            cells.forEachIndexed { colIdx, text ->
-                val w = colWidths[colIdx]
-                canvas.drawLine(cellX, curY, cellX, curY + rowHeight, paintBorder)
-
+            colWidths.forEachIndexed { colIdx, w ->
                 when (colIdx) {
-                    0, 1, 2, 3, 7 -> {
+                    0 -> {
                         paintCellText.textAlign = Paint.Align.CENTER
-                        canvas.drawText(text, cellX + w / 2f, curY + 14f, paintCellText)
+                        canvas.drawText(first.sno, cellX + w / 2f, centerY, paintCellText)
+                    }
+                    1 -> {
+                        canvas.drawText(first.hallNumber, cellX + w / 2f, centerY, paintBoldText)
+                    }
+                    2 -> {
+                        paintCellText.textAlign = Paint.Align.CENTER
+                        canvas.drawText(first.floor, cellX + w / 2f, centerY, paintCellText)
+                    }
+                    3 -> {
+                        paintCellText.textAlign = Paint.Align.CENTER
+                        canvas.drawText("CSE", cellX + w / 2f, centerY, paintCellText)
                     }
                     8 -> {
-                        canvas.drawText(text, cellX + w / 2f, curY + 14f, paintBoldText)
-                    }
-                    else -> {
-                        paintCellText.textAlign = Paint.Align.LEFT
-                        canvas.drawText(text, cellX + 6f, curY + 14f, paintCellText)
+                        canvas.drawText(first.hallTotal, cellX + w / 2f, centerY, paintBoldText)
                     }
                 }
                 cellX += w
             }
-            canvas.drawLine(right, curY, right, curY + rowHeight, paintBorder)
-            curY += rowHeight
+
+            // 2. Draw per-cohort rows: Year/Sem, Reg No From, Reg No To, Count
+            val col4X = left + colWidths.take(4).sum()
+            val col7Right = left + colWidths.take(8).sum()
+
+            hallRows.forEachIndexed { rIdx, row ->
+                val rY = curY + (rIdx * rowHeight) + 14f
+                if (rIdx > 0) {
+                    // Inner divider only across cols 4..7
+                    canvas.drawLine(col4X, curY + (rIdx * rowHeight), col7Right, curY + (rIdx * rowHeight), paintBorder)
+                }
+
+                var subX = col4X
+                // Col 4: Year / Sem
+                paintCellText.textAlign = Paint.Align.LEFT
+                canvas.drawText(row.yearSem, subX + 6f, rY, paintCellText)
+                subX += colWidths[4]
+
+                // Col 5: Reg No From
+                canvas.drawText(row.regFrom, subX + 6f, rY, paintCellText)
+                subX += colWidths[5]
+
+                // Col 6: Reg No To
+                canvas.drawText(row.regTo, subX + 6f, rY, paintCellText)
+                subX += colWidths[6]
+
+                // Col 7: Count
+                paintCellText.textAlign = Paint.Align.CENTER
+                canvas.drawText(row.count, subX + colWidths[7] / 2f, rY, paintCellText)
+            }
+
+            // 3. Draw vertical column grid lines for the entire hall box
+            var vertX = left
+            colWidths.forEach { w ->
+                canvas.drawLine(vertX, curY, vertX, curY + hallHeight, paintBorder)
+                vertX += w
+            }
+            canvas.drawLine(right, curY, right, curY + hallHeight, paintBorder)
+
+            curY += hallHeight
         }
 
         return curY
@@ -294,8 +401,6 @@ class PdfGenerator @Inject constructor(
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
         }
         canvas.drawText("EXAM CELL COORDINATOR", left + 20f, y, paint)
-        paint.textAlign = Paint.Align.CENTER
-        canvas.drawText("HOD / CSE", (left + right) / 2f, y, paint)
         paint.textAlign = Paint.Align.RIGHT
         canvas.drawText("PRINCIPAL", right - 20f, y, paint)
     }

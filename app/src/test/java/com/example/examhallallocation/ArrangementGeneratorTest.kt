@@ -177,13 +177,16 @@ class ArrangementGeneratorTest {
     // 8. Phase 3
 
     @Test
-    fun `phase 3 uses exactly 2 halls with only 3rd year`() {
+    fun `phase 3 uses 4 halls with only 3rd year and max 30 students per hall`() {
         val students = studentsForYear(StudentYear.YEAR_3, 120)
         val arrangement = (generate(students, standardHalls(6), standardTeachers(4), phase = ExamPhase.PHASE_3) as GenerationResult.Success).arrangement
 
         assertThat(arrangement.phase).isEqualTo(ExamPhase.PHASE_3)
-        assertThat(arrangement.hallAssignments.map { it.hallId }.distinct().size).isEqualTo(2)
+        assertThat(arrangement.hallAssignments.map { it.hallId }.distinct().size).isEqualTo(4)
         assertThat(arrangement.hallAssignments.map { it.year }.toSet()).containsExactly(StudentYear.YEAR_3)
+        arrangement.hallAssignments.groupBy { it.hallId }.forEach { (_, blocks) ->
+            assertThat(blocks.sumOf { it.studentIds.size }).isAtMost(30)
+        }
     }
 
     // 9. HOD exclusion
@@ -500,6 +503,342 @@ class ArrangementGeneratorTest {
         val report = ArrangementValidator.validate(modifiedArrangement, students, halls, teachers, listOf(modifiedArrangement))
         assertThat(report.isValid).isFalse()
         assertThat(report.errors.any { it.contains("multiple halls") }).isTrue()
+    }
+
+    // ------------------------------------------------------------------
+    // Exact 7-Day Curriculum Schedule Test
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `exact 7-day curriculum scenario satisfies all phase, capacity, coordinator, and teacher balance constraints`() {
+        // II Year: 6 subjects (115 students)
+        // III Year: 7 subjects (119 students)
+        // IV Year: 5 subjects (106 students)
+        val year2 = studentsForYear(StudentYear.YEAR_2, 115)
+        val year3 = studentsForYear(StudentYear.YEAR_3, 119)
+        val year4 = studentsForYear(StudentYear.YEAR_4, 106)
+        val allStudents = year2 + year3 + year4
+
+        val halls = standardHalls(12)
+        // 1 coordinator + 14 teachers = 15 staff
+        val teachers = standardTeachers(14).filter { it.role != UserRole.HOD }
+
+        var existingArrangements = emptyList<Arrangement>()
+
+        // Days 1 to 5: Phase 1 (All 3 years write)
+        (1..5).forEach { day ->
+            val result = generator.generate(
+                examName = "Midterm Day $day",
+                date = "2026-04-%02d".format(12 + day),
+                phase = ExamPhase.PHASE_1,
+                students = allStudents,
+                halls = halls,
+                teachers = teachers,
+                semesters = fullSemesters,
+                existingArrangements = existingArrangements,
+            )
+            assertThat(result).isInstanceOf(GenerationResult.Success::class.java)
+            val arr = (result as GenerationResult.Success).arrangement
+
+            // Validate against validator
+            val report = ArrangementValidator.validate(arr, allStudents, halls, teachers, existingArrangements + arr)
+            assertThat(report.isValid).isTrue()
+
+            // Check halls and mingling
+            val occupiedHalls = arr.hallAssignments.map { it.hallId }.distinct()
+            assertThat(occupiedHalls.size).isEqualTo(12)
+            arr.hallAssignments.groupBy { it.hallId }.forEach { (_, blocks) ->
+                assertThat(blocks.sumOf { it.studentIds.size }).isAtMost(30)
+                assertThat(blocks.map { it.year }.distinct().size).isAtMost(2)
+            }
+
+            existingArrangements = existingArrangements + arr
+        }
+
+        // Day 6: Phase 2 (Year 2 and Year 3 only; Year 4 finished 5 subjects)
+        val day6Students = year2 + year3
+        val day6Result = generator.generate(
+            examName = "Midterm Day 6",
+            date = "2026-04-18",
+            phase = ExamPhase.PHASE_2,
+            students = day6Students,
+            halls = halls,
+            teachers = teachers,
+            semesters = fullSemesters,
+            existingArrangements = existingArrangements,
+        )
+        assertThat(day6Result).isInstanceOf(GenerationResult.Success::class.java)
+        val day6Arr = (day6Result as GenerationResult.Success).arrangement
+        val day6Report = ArrangementValidator.validate(day6Arr, day6Students, halls, teachers, existingArrangements + day6Arr)
+        assertThat(day6Report.isValid).isTrue()
+
+        val day6Halls = day6Arr.hallAssignments.map { it.hallId }.distinct()
+        assertThat(day6Halls.size).isEqualTo(8)
+        day6Arr.hallAssignments.groupBy { it.hallId }.forEach { (_, blocks) ->
+            assertThat(blocks.sumOf { it.studentIds.size }).isAtMost(30)
+        }
+        existingArrangements = existingArrangements + day6Arr
+
+        // Day 7: Phase 3 (Year 3 only; Year 2 finished 6 subjects)
+        val day7Students = year3
+        val day7Result = generator.generate(
+            examName = "Midterm Day 7 (Monday)",
+            date = "2026-04-20",
+            phase = ExamPhase.PHASE_3,
+            students = day7Students,
+            halls = halls,
+            teachers = teachers,
+            semesters = fullSemesters,
+            existingArrangements = existingArrangements,
+        )
+        assertThat(day7Result).isInstanceOf(GenerationResult.Success::class.java)
+        val day7Arr = (day7Result as GenerationResult.Success).arrangement
+        val day7Report = ArrangementValidator.validate(day7Arr, day7Students, halls, teachers, existingArrangements + day7Arr)
+        assertThat(day7Report.isValid).isTrue()
+
+        val day7Halls = day7Arr.hallAssignments.map { it.hallId }.distinct()
+        assertThat(day7Halls.size).isEqualTo(4)
+        day7Arr.hallAssignments.groupBy { it.hallId }.forEach { (_, blocks) ->
+            assertThat(blocks.sumOf { it.studentIds.size }).isAtMost(30)
+        }
+        existingArrangements = existingArrangements + day7Arr
+
+        // Across all 7 days:
+        // 1. Coordinator must receive EXACTLY 1 duty
+        val coordDuties = existingArrangements.sumOf { arr ->
+            arr.invigilatorAssignments.count { it.teacherId == "tea_coord" }
+        }
+        assertThat(coordDuties).isEqualTo(1)
+
+        // 2. Normal teachers must receive equal distribution (max - min <= 1)
+        val teacherDuties = teachers.filter { it.role == UserRole.NORMAL_TEACHER }.map { t ->
+            existingArrangements.sumOf { arr -> arr.invigilatorAssignments.count { it.teacherId == t.id } }
+        }
+        val maxDuties = teacherDuties.max()
+        val minDuties = teacherDuties.min()
+        assertThat(maxDuties - minDuties).isAtMost(1)
+
+        // Total duties across 7 days: 5 * 12 + 8 + 4 = 72 duties.
+        // 1 coordinator + 71 normal teacher duties across 14 teachers: 71 / 14 = 5.07 -> duties are either 5 or 6 each!
+        assertThat(existingArrangements.sumOf { it.invigilatorAssignments.size }).isEqualTo(72)
+        assertThat(minDuties).isEqualTo(5)
+        assertThat(maxDuties).isEqualTo(6)
+    }
+
+    // ------------------------------------------------------------------
+    // Dedicated Implementation Plan Verification Suite
+    // ------------------------------------------------------------------
+
+    @Test
+    fun `15+15 alternating bench seating test`() {
+        val year2 = studentsForYear(StudentYear.YEAR_2, 120)
+        val year3 = studentsForYear(StudentYear.YEAR_3, 120)
+        val year4 = studentsForYear(StudentYear.YEAR_4, 120)
+        val halls = standardHalls(12)
+        val teachers = standardTeachers(14).filter { it.role != UserRole.HOD }
+
+        val result = generate(year2 + year3 + year4, halls, teachers, phase = ExamPhase.PHASE_1)
+        assertThat(result).isInstanceOf(GenerationResult.Success::class.java)
+        val arrangement = (result as GenerationResult.Success).arrangement
+
+        val byHall = arrangement.hallAssignments.groupBy { it.hallId }
+        assertThat(byHall.size).isEqualTo(12)
+
+        byHall.forEach { (_, blocks) ->
+            // Exactly 2 cohorts per hall
+            assertThat(blocks.size).isEqualTo(2)
+            assertThat(blocks[0].year).isNotEqualTo(blocks[1].year)
+
+            // Exactly 15 students per batch (total 30)
+            assertThat(blocks[0].studentIds.size).isEqualTo(15)
+            assertThat(blocks[1].studentIds.size).isEqualTo(15)
+            assertThat(blocks.sumOf { it.studentIds.size }).isEqualTo(30)
+
+            // Alternating benches:
+            // Odd benches 1, 3, 5...29 from Cohort A; Even benches 2, 4, 6...30 from Cohort B
+            val benchList = mutableListOf<Pair<Int, String>>()
+            for (i in 0 until 15) {
+                benchList.add((2 * i + 1) to blocks[0].studentIds[i])
+                benchList.add((2 * i + 2) to blocks[1].studentIds[i])
+            }
+            assertThat(benchList.size).isEqualTo(30)
+            // Adjacent benches must have different years
+            for (i in 0 until 29) {
+                val studentA = (year2 + year3 + year4).first { it.id == benchList[i].second }
+                val studentB = (year2 + year3 + year4).first { it.id == benchList[i + 1].second }
+                assertThat(studentA.year).isNotEqualTo(studentB.year)
+            }
+        }
+    }
+
+    @Test
+    fun `empty bench absence test`() {
+        // Position 8 is absent/missing in Year 2
+        val year2 = studentsForYear(StudentYear.YEAR_2, 119, missingPositions = setOf(8))
+        val year3 = studentsForYear(StudentYear.YEAR_3, 120)
+        val halls = standardHalls(12)
+        val teachers = standardTeachers(14).filter { it.role != UserRole.HOD }
+
+        val result = generate(year2 + year3, halls, teachers, phase = ExamPhase.PHASE_2)
+        assertThat(result).isInstanceOf(GenerationResult.Success::class.java)
+        val arrangement = (result as GenerationResult.Success).arrangement
+
+        // The batch 1-15 for Year 2 must NOT shift students 9..15 to position 8
+        val batch1 = arrangement.hallAssignments.first { it.year == StudentYear.YEAR_2 && it.startPosition == 1 }
+        assertThat(batch1.endPosition).isEqualTo(15)
+        assertThat(batch1.studentIds.size).isEqualTo(14)
+
+        // Verify that student 9 is still at position 9, not shifted to 8
+        val student9 = year2.first { it.id == "stu_2_9" }
+        assertThat(student9.position).isEqualTo(9)
+        assertThat(batch1.studentIds).contains("stu_2_9")
+    }
+
+    @Test
+    fun `cumulative duty balancing test across Assessment 1, Assessment 2, and Model Exam`() {
+        val year2 = studentsForYear(StudentYear.YEAR_2, 120)
+        val year3 = studentsForYear(StudentYear.YEAR_3, 120)
+        val year4 = studentsForYear(StudentYear.YEAR_4, 120)
+        val allStudents = year2 + year3 + year4
+        val halls = standardHalls(12)
+        val teachers = standardTeachers(14).filter { it.role != UserRole.HOD }
+
+        var cumulativeArrangements = emptyList<Arrangement>()
+
+        // 3 Exam cycles: Assessment 1 (3 days), Assessment 2 (3 days), Model Exam (3 days) = 9 days
+        listOf("Assessment_1", "Assessment_2", "Model_Exam").forEachIndexed { examIndex, examName ->
+            (1..3).forEach { day ->
+                val date = "2026-%02d-%02d".format(5 + examIndex, 10 + day)
+                val result = generator.generate(
+                    examName = "$examName Day $day",
+                    date = date,
+                    phase = ExamPhase.PHASE_1,
+                    students = allStudents,
+                    halls = halls,
+                    teachers = teachers,
+                    semesters = fullSemesters,
+                    existingArrangements = cumulativeArrangements,
+                )
+                assertThat(result).isInstanceOf(GenerationResult.Success::class.java)
+                val arr = (result as GenerationResult.Success).arrangement
+                cumulativeArrangements = cumulativeArrangements + arr
+            }
+        }
+
+        // Across all 9 days combined (108 total duties):
+        val teacherDuties = teachers.filter { it.role == UserRole.NORMAL_TEACHER }.map { t ->
+            cumulativeArrangements.sumOf { arr -> arr.invigilatorAssignments.count { it.teacherId == t.id } }
+        }
+        val maxDuties = teacherDuties.max()
+        val minDuties = teacherDuties.min()
+        // Workload is strictly balanced across the 3 exams combined
+        assertThat(maxDuties - minDuties).isAtMost(1)
+
+        // Coordinator gets at most 1 duty across all exams
+        val coordDuties = cumulativeArrangements.sumOf { arr ->
+            arr.invigilatorAssignments.count { it.teacherId == "tea_coord" }
+        }
+        assertThat(coordDuties).isAtMost(1)
+    }
+
+    @Test
+    fun `coordinator reserve duty test`() {
+        val students = studentsForYear(StudentYear.YEAR_2, 60) + studentsForYear(StudentYear.YEAR_3, 60)
+        val halls = standardHalls(4)
+
+        // When sufficient normal teachers are available, coordinator receives at most 1 duty
+        val teachers = standardTeachers(6).filter { it.role != UserRole.HOD }
+        val result = generate(students, halls, teachers, phase = ExamPhase.PHASE_2)
+        assertThat(result).isInstanceOf(GenerationResult.Success::class.java)
+        val arr = (result as GenerationResult.Success).arrangement
+
+        val coordDutyCount = arr.invigilatorAssignments.count { it.teacherId == "tea_coord" }
+        assertThat(coordDutyCount).isAtMost(1)
+    }
+
+    @Test
+    fun `phase 1 follows exact deterministic 3-hall cyclic triplet sequence across all 12 halls`() {
+        val year2 = studentsForYear(StudentYear.YEAR_2, 120)
+        val year3 = studentsForYear(StudentYear.YEAR_3, 120)
+        val year4 = studentsForYear(StudentYear.YEAR_4, 120)
+        val halls = standardHalls(12)
+        val teachers = standardTeachers(14).filter { it.role != UserRole.HOD }
+
+        val result = generate(year2 + year3 + year4, halls, teachers, phase = ExamPhase.PHASE_1)
+        assertThat(result).isInstanceOf(GenerationResult.Success::class.java)
+        val arr = (result as GenerationResult.Success).arrangement
+
+        val byHall = linkedMapOf<String, MutableList<HallAssignment>>()
+        arr.hallAssignments.forEach { ha ->
+            byHall.getOrPut(ha.hallId) { mutableListOf() }.add(ha)
+        }
+
+        assertThat(byHall.size).isEqualTo(12)
+        val hallEntries = byHall.values.toList()
+
+        // Expected triplets across 12 halls (4 repetitions of 3-hall cycle)
+        // Triplet 1 (Halls 1, 2, 3):
+        // Hall 1: Y2 (1-15) + Y3 (1-15)
+        assertThat(hallEntries[0][0].year).isEqualTo(StudentYear.YEAR_2)
+        assertThat(hallEntries[0][0].startPosition).isEqualTo(1)
+        assertThat(hallEntries[0][0].endPosition).isEqualTo(15)
+        assertThat(hallEntries[0][1].year).isEqualTo(StudentYear.YEAR_3)
+        assertThat(hallEntries[0][1].startPosition).isEqualTo(1)
+        assertThat(hallEntries[0][1].endPosition).isEqualTo(15)
+
+        // Hall 2: Y4 (1-15) + Y2 (16-30)
+        assertThat(hallEntries[1][0].year).isEqualTo(StudentYear.YEAR_4)
+        assertThat(hallEntries[1][0].startPosition).isEqualTo(1)
+        assertThat(hallEntries[1][0].endPosition).isEqualTo(15)
+        assertThat(hallEntries[1][1].year).isEqualTo(StudentYear.YEAR_2)
+        assertThat(hallEntries[1][1].startPosition).isEqualTo(16)
+        assertThat(hallEntries[1][1].endPosition).isEqualTo(30)
+
+        // Hall 3: Y3 (16-30) + Y4 (16-30)
+        assertThat(hallEntries[2][0].year).isEqualTo(StudentYear.YEAR_3)
+        assertThat(hallEntries[2][0].startPosition).isEqualTo(16)
+        assertThat(hallEntries[2][0].endPosition).isEqualTo(30)
+        assertThat(hallEntries[2][1].year).isEqualTo(StudentYear.YEAR_4)
+        assertThat(hallEntries[2][1].startPosition).isEqualTo(16)
+        assertThat(hallEntries[2][1].endPosition).isEqualTo(30)
+
+        // Triplet 2 (Halls 4, 5, 6):
+        // Hall 4: Y2 (31-45) + Y3 (31-45)
+        assertThat(hallEntries[3][0].year).isEqualTo(StudentYear.YEAR_2)
+        assertThat(hallEntries[3][0].startPosition).isEqualTo(31)
+        assertThat(hallEntries[3][0].endPosition).isEqualTo(45)
+        assertThat(hallEntries[3][1].year).isEqualTo(StudentYear.YEAR_3)
+        assertThat(hallEntries[3][1].startPosition).isEqualTo(31)
+        assertThat(hallEntries[3][1].endPosition).isEqualTo(45)
+
+        // Hall 5: Y4 (31-45) + Y2 (46-60)
+        assertThat(hallEntries[4][0].year).isEqualTo(StudentYear.YEAR_4)
+        assertThat(hallEntries[4][0].startPosition).isEqualTo(31)
+        assertThat(hallEntries[4][0].endPosition).isEqualTo(45)
+        assertThat(hallEntries[4][1].year).isEqualTo(StudentYear.YEAR_2)
+        assertThat(hallEntries[4][1].startPosition).isEqualTo(46)
+        assertThat(hallEntries[4][1].endPosition).isEqualTo(60)
+
+        // Hall 6: Y3 (46-60) + Y4 (46-60)
+        assertThat(hallEntries[5][0].year).isEqualTo(StudentYear.YEAR_3)
+        assertThat(hallEntries[5][0].startPosition).isEqualTo(46)
+        assertThat(hallEntries[5][0].endPosition).isEqualTo(60)
+        assertThat(hallEntries[5][1].year).isEqualTo(StudentYear.YEAR_4)
+        assertThat(hallEntries[5][1].startPosition).isEqualTo(46)
+        assertThat(hallEntries[5][1].endPosition).isEqualTo(60)
+
+        // Triplet 4 final hall (Hall 12): Y3 (106-120) + Y4 (106-120)
+        assertThat(hallEntries[11][0].year).isEqualTo(StudentYear.YEAR_3)
+        assertThat(hallEntries[11][0].startPosition).isEqualTo(106)
+        assertThat(hallEntries[11][0].endPosition).isEqualTo(120)
+        assertThat(hallEntries[11][1].year).isEqualTo(StudentYear.YEAR_4)
+        assertThat(hallEntries[11][1].startPosition).isEqualTo(106)
+        assertThat(hallEntries[11][1].endPosition).isEqualTo(120)
+
+        // All halls have strictly 30 students (15 + 15)
+        hallEntries.forEach { blocks ->
+            assertThat(blocks.sumOf { it.studentIds.size }).isEqualTo(30)
+        }
     }
 }
 

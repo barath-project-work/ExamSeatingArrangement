@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/dutyRowContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/space_8"
+        android:paddingVertical="9dp">
+
+        <TextView
+            android:id="@+id/tvDutySno"
+            android:layout_width="40dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp"
+            tools:text="1" />
+
+        <TextView
+            android:id="@+id/tvDutyTeacherName"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:gravity="start|center_vertical"
+            android:paddingStart="8dp"
+            android:textColor="@color/navy_primary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            tools:text="Dr. R. Murugan" />
+
+        <TextView
+            android:id="@+id/tvDutyTeacherRole"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            tools:text="Assistant Professor" />
+
+        <TextView
+            android:id="@+id/tvDutyHall"
+            android:layout_width="75dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/navy_primary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            tools:text="A212" />
+
+        <TextView
+            android:id="@+id/tvDutyFloor"
+            android:layout_width="65dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp"
+            tools:text="Floor 2" />
+
+        <TextView
+            android:id="@+id/tvDutyBlock"
+            android:layout_width="65dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/text_primary"
+            android:textSize="11sp"
+            tools:text="Block A" />
+
+        <TextView
+            android:id="@+id/tvDutyTotalInExam"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/navy_primary"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            tools:text="4 Duties" />
+
+        <TextView
+            android:id="@+id/tvDutySession"
+            android:layout_width="160dp"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp"
+            tools:text="8:40 a.m. - 10:10 a.m. (FN)" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider_color" />
+</LinearLayout>

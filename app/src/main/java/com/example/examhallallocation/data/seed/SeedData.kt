@@ -28,7 +28,6 @@ object SeedDataProvider {
     }
 
     fun teachers(): List<Teacher> = listOf(
-        Teacher("tea_hod", "Dr. A. Ramesh", "hod", UserRole.HOD, active = true),
         Teacher("tea_coord", "S. Kalaiselvi", "coordinator", UserRole.EXAM_CELL_COORDINATOR, active = true),
         Teacher("tea_admin", "Exam Cell Admin", DEMO_ADMIN_USERNAME, UserRole.ADMIN, active = true),
         Teacher("tea_rkumar", "R. Kumar", "rkumar", UserRole.NORMAL_TEACHER, active = true),
@@ -43,6 +42,8 @@ object SeedDataProvider {
         Teacher("tea_kavya", "K. Kavya", "kavya", UserRole.NORMAL_TEACHER, active = true),
         Teacher("tea_arun", "A. Arun", "arun", UserRole.NORMAL_TEACHER, active = true),
         Teacher("tea_rekha", "R. Rekha", "rekha", UserRole.NORMAL_TEACHER, active = true),
+        Teacher("tea_sangeetha", "S. Sangeetha", "sangeetha", UserRole.NORMAL_TEACHER, active = true),
+        Teacher("tea_karthik", "K. Karthik", "karthik", UserRole.NORMAL_TEACHER, active = true),
     )
 
     fun halls(): List<Hall> = listOf(
@@ -353,59 +354,26 @@ object SeedDataProvider {
     )
 
     private fun year2Students(): List<Student> {
-        // II Year (Batch 25 / Sem 3): 110325104001 to 110325104120.
-        // Roll numbers 31 and 79 are gaps as seen in the GRT allocation document.
-        val missing = setOf(31, 79)
-        return (1..120).filter { it !in missing }.map { index ->
+        // II Year (Batch 25 / Sem 3): 110325104001 to 110325104120 (120 students, 8 batches of 15)
+        return (1..120).map { index ->
             val name = if (index == 107) "Subash R" else studentName(2, index)
             student("110325104", index, index, StudentYear.YEAR_2, 3, name)
         }
     }
 
     private fun year3Students(): List<Student> {
-        // III Year (Batch 24 / Sem 5): 110324104001 to 110324104120 + Lateral 110324104301.
-        val missing = setOf(12, 17, 44, 76)
-        val regular = (1..120).filter { it !in missing }.map { index ->
+        // III Year (Batch 24 / Sem 5): 110324104001 to 110324104120 (120 students, 8 batches of 15)
+        return (1..120).map { index ->
             val name = if (index == 60) "Lokesh S" else studentName(3, index)
             student("110324104", index, index, StudentYear.YEAR_3, 5, name)
         }
-        val lateral = Student(
-            id = "stu_110324104301",
-            registerNumber = "110324104301",
-            name = "Vigneshwaran M",
-            year = StudentYear.YEAR_3,
-            section = "B",
-            position = 121,
-            active = true,
-        )
-        return regular + lateral
     }
 
     private fun year4Students(): List<Student> {
-        // IV / Final Year (Batch 23 / Sem 7): 110323104001 to 110323104120 + Laterals 301, 302.
-        val missing = setOf(45, 63, 93)
-        val regular = (1..120).filter { it !in missing }.map { index ->
+        // IV / Final Year (Batch 23 / Sem 7): 110323104001 to 110323104120 (120 students, 8 batches of 15)
+        return (1..120).map { index ->
             student("110323104", index, index, StudentYear.YEAR_4, 7, studentName(4, index))
         }
-        val lateral1 = Student(
-            id = "stu_110323104301",
-            registerNumber = "110323104301",
-            name = "Karthikeyan G",
-            year = StudentYear.YEAR_4,
-            section = "B",
-            position = 121,
-            active = true,
-        )
-        val lateral2 = Student(
-            id = "stu_110323104302",
-            registerNumber = "110323104302",
-            name = "Praveen Kumar S",
-            year = StudentYear.YEAR_4,
-            section = "B",
-            position = 122,
-            active = true,
-        )
-        return regular + lateral1 + lateral2
     }
 
     private fun studentName(year: Int, index: Int): String {

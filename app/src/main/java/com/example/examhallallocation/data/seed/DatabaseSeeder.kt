@@ -2,11 +2,13 @@ package com.example.examhallallocation.data.seed
 
 import androidx.room.withTransaction
 import com.example.examhallallocation.data.local.ExamHallDatabase
+import com.example.examhallallocation.data.local.toDomain
 import com.example.examhallallocation.data.local.toEntity
 import com.example.examhallallocation.data.repository.DemoAuthRepository
 import com.example.examhallallocation.data.sync.SyncManager
 import com.example.examhallallocation.domain.model.Teacher
 import com.example.examhallallocation.domain.model.UserRole
+import com.example.examhallallocation.domain.usecase.ArrangementGenerator
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -47,6 +49,7 @@ class DatabaseSeeder @Inject constructor(
                     bootstrapAndHydrate()
                 } else {
                     seedDemoData(pushToCloud = false)
+                    reconcileDatabaseStudents()
                 }
             }
         }
@@ -60,6 +63,27 @@ class DatabaseSeeder @Inject constructor(
         bootstrapAdminAccount()
         bootstrapHalls()
         hydrateFromCloud()
+        reconcileDatabaseStudents()
+    }
+
+    /**
+     * Normalizes all student positions in the local Room database to eliminate
+     * duplicate positions and ensure strict 1..120 academic batch alignment.
+     */
+    suspend fun reconcileDatabaseStudents() = kotlinx.coroutines.withContext(Dispatchers.IO) {
+        runCatching {
+            val allEntities = database.studentDao().observeAll().first()
+            if (allEntities.isEmpty()) return@runCatching
+            val generator = ArrangementGenerator()
+            val domainStudents = allEntities.map { it.toDomain() }
+            val updated = domainStudents.groupBy { it.year }.flatMap { (_, cohort) ->
+                generator.sanitizeCohortPositions(cohort)
+            }
+            database.withTransaction {
+                updated.forEach { database.studentDao().update(it.toEntity()) }
+            }
+            android.util.Log.i(TAG, "Reconciled ${updated.size} student positions in local database")
+        }
     }
 
     /**
@@ -80,33 +104,57 @@ class DatabaseSeeder @Inject constructor(
             if (snapshot != null && !snapshot.isEmpty) {
                 database.withTransaction {
                     if (snapshot.students.isNotEmpty()) {
+                        val sanitized = snapshot.students.map { s ->
+                            val roll = s.extractRollNumber()
+                            if (roll in 1..120) s.copy(position = roll) else s
+                        }
                         database.studentDao().deleteAll()
-                        database.studentDao().insertAll(snapshot.students.map { it.toEntity() })
+                        database.studentDao().insertAll(sanitized.map { it.toEntity() })
                     }
                     if (snapshot.teachers.isNotEmpty()) {
-                        snapshot.teachers.forEach { database.teacherDao().insert(it.toEntity()) }
+                        snapshot.teachers
+                            .filter { it.role != com.example.examhallallocation.domain.model.UserRole.HOD }
+                            .forEach { database.teacherDao().insert(it.toEntity()) }
                     }
                     if (snapshot.exams.isNotEmpty()) {
                         database.examDao().deleteAll()
                         database.examDao().insertAll(snapshot.exams.map { it.toEntity() })
                     }
-                    if (snapshot.halls.isNotEmpty()) {
-                        database.hallDao().deleteAll()
-                        database.hallDao().insertAll(snapshot.halls.map { it.toEntity() })
-                    }
+                    // Institutional Hall Invariance: Always preserve and ensure all 12 physical examination halls (A212..B215)
+                    val institutionalHalls = SeedDataProvider.halls()
+                    val cloudHalls = snapshot.halls
+                    val mergedHalls = (institutionalHalls + cloudHalls).distinctBy { it.id }
+                    database.hallDao().insertAll(mergedHalls.map { it.toEntity() })
                 }
                 snapshot.arrangements.forEach { arrangement ->
-                    database.arrangementDao().replaceForDate(
-                        date = arrangement.date,
-                        arrangement = arrangement.toEntity(),
-                        hallAssignments = arrangement.hallAssignments.map { it.toEntity(arrangement.id) },
-                        invigilatorAssignments = arrangement.invigilatorAssignments.map { it.toEntity(arrangement.id) },
-                    )
+                    val byHall = arrangement.hallAssignments.groupBy { it.hallId }
+                    val isCorrupted = byHall.any { (_, blocks) ->
+                        blocks.sumOf { it.studentIds.size } > 30 || blocks.map { it.year }.distinct().size < blocks.size
+                    } || (arrangement.phase == com.example.examhallallocation.domain.model.ExamPhase.PHASE_1 && byHall.size < 12)
+                    if (!isCorrupted) {
+                        database.arrangementDao().replaceForDate(
+                            date = arrangement.date,
+                            arrangement = arrangement.toEntity(),
+                            hallAssignments = arrangement.hallAssignments.map { it.toEntity(arrangement.id) },
+                            invigilatorAssignments = arrangement.invigilatorAssignments.map { it.toEntity(arrangement.id) },
+                        )
+                    }
                 }
                 val hasSubjects = database.subjectDao().observeAll().first().isNotEmpty()
                 if (!hasSubjects) {
                     database.subjectDao().insertAll(SeedDataProvider.subjects().map { it.toEntity() })
                 }
+
+                val hasStudents = database.studentDao().observeAll().first().isNotEmpty()
+                if (!hasStudents) {
+                    database.studentDao().insertAll(SeedDataProvider.students().map { it.toEntity() })
+                }
+
+                val hasTeachers = database.teacherDao().observeAll().first().any { it.role == UserRole.NORMAL_TEACHER.name }
+                if (!hasTeachers) {
+                    SeedDataProvider.teachers().forEach { database.teacherDao().insert(it.toEntity()) }
+                }
+
                 android.util.Log.i(TAG, "Hydrated ${snapshot.students.size} students, ${snapshot.exams.size} exams from Cloud Firestore")
                 true
             } else {
@@ -114,6 +162,17 @@ class DatabaseSeeder @Inject constructor(
                 if (!hasSubjects) {
                     database.subjectDao().insertAll(SeedDataProvider.subjects().map { it.toEntity() })
                 }
+
+                val hasStudents = database.studentDao().observeAll().first().isNotEmpty()
+                if (!hasStudents) {
+                    database.studentDao().insertAll(SeedDataProvider.students().map { it.toEntity() })
+                }
+
+                val hasTeachers = database.teacherDao().observeAll().first().any { it.role == UserRole.NORMAL_TEACHER.name }
+                if (!hasTeachers) {
+                    SeedDataProvider.teachers().forEach { database.teacherDao().insert(it.toEntity()) }
+                }
+
                 false
             }
         }.getOrElse { e ->
@@ -185,6 +244,18 @@ class DatabaseSeeder @Inject constructor(
         if (!hasExams) {
             database.examDao().run {
                 insertAll(SeedDataProvider.exams().map { it.toEntity() })
+            }
+        }
+
+        val hasStudents = database.studentDao().observeAll().first().isNotEmpty()
+        if (!hasStudents) {
+            database.studentDao().insertAll(SeedDataProvider.students().map { it.toEntity() })
+        }
+
+        val hasTeachers = database.teacherDao().observeAll().first().any { it.role == UserRole.NORMAL_TEACHER.name }
+        if (!hasTeachers) {
+            SeedDataProvider.teachers().forEach {
+                database.teacherDao().insert(it.toEntity())
             }
         }
 

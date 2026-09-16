@@ -323,7 +323,7 @@ class ArrangementRepository @Inject constructor(
 
     suspend fun clearAll() {
         arrangementDao.clearAll()
-        // Note: cloud arrangements are replaced per-date on regeneration; full cloud
-        // wipe is intentionally manual from the Firebase console.
+        arrangementDao.clearAllHallAssignments()
+        arrangementDao.clearAllInvigilatorAssignments()
     }
 }

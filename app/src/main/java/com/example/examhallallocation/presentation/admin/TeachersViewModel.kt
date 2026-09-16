@@ -29,15 +29,38 @@ class TeachersViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val demoAuthRepository: dagger.Lazy<DemoAuthRepository>,
     private val dataExportManager: com.example.examhallallocation.domain.usecase.DataExportManager,
+    private val getFacultyDutySummaryUseCase: com.example.examhallallocation.domain.usecase.GetFacultyDutySummaryUseCase,
 ) : ViewModel() {
 
     val teachers: StateFlow<List<Teacher>> = teacherRepository.observeAll()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    private val _dutySummaries = MutableStateFlow<List<com.example.examhallallocation.domain.model.TeacherDutySummary>>(emptyList())
+    val dutySummaries: StateFlow<List<com.example.examhallallocation.domain.model.TeacherDutySummary>> = _dutySummaries.asStateFlow()
+
+    private val _activeExamName = MutableStateFlow("Assessment Test - I")
+    val activeExamName: StateFlow<String> = _activeExamName.asStateFlow()
+
     private val _events = MutableStateFlow<String?>(null)
     val events: StateFlow<String?> = _events.asStateFlow()
 
     private val firebaseConfigured: Boolean by lazy { FirebaseApp.getApps(appContext).isNotEmpty() }
+
+    init {
+        loadDutySummaries()
+    }
+
+    fun loadDutySummaries() {
+        viewModelScope.launch {
+            val summaries = runCatching {
+                getFacultyDutySummaryUseCase()
+            }.getOrDefault(emptyList())
+            _dutySummaries.value = summaries
+            if (summaries.isNotEmpty()) {
+                _activeExamName.value = summaries.first().examName
+            }
+        }
+    }
 
     fun addTeacher(name: String, username: String, password: String, role: UserRole) {
         viewModelScope.launch {

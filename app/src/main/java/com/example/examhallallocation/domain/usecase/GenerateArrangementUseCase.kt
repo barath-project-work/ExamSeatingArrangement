@@ -58,6 +58,8 @@ class GenerateArrangementUseCase @Inject constructor(
             ?: exams.firstOrNull()?.examName
             ?: "Examination"
 
+        android.util.Log.i("ArrangementGen", "Invoke date=$date, students=${students.size}, teachers=${teachers.size}, halls=${halls.size}, exams=${exams.size}, years=$years, phase=$phase")
+
         val result = generator.generate(
             examName = examName,
             date = date,
@@ -68,6 +70,8 @@ class GenerateArrangementUseCase @Inject constructor(
             semesters = semesters,
             existingArrangements = existing,
         )
+
+        android.util.Log.i("ArrangementGen", "Generation result: $result")
 
         if (result is GenerationResult.Success) {
             arrangementRepository.replaceForDate(date, result.arrangement)

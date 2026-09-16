@@ -10,6 +10,7 @@ import com.example.examhallallocation.data.repository.HallRepository
 import com.example.examhallallocation.data.repository.StudentRepository
 import com.example.examhallallocation.domain.model.DutyDay
 import com.example.examhallallocation.domain.model.HallStudentAttendance
+import com.example.examhallallocation.domain.model.Student
 import com.example.examhallallocation.domain.model.UserSession
 import com.example.examhallallocation.domain.usecase.DataExportManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -90,21 +91,34 @@ class TeacherDashboardViewModel @Inject constructor(
             val hallStudents = if (currentDuty != null) {
                 val arrangement = arrangements.firstOrNull { it.date == currentDuty.date }
                 val inv = arrangement?.invigilatorAssignments?.firstOrNull { it.teacherId == session.teacherId }
-                val studentIds = arrangement?.hallAssignments
+                val blocks = arrangement?.hallAssignments
                     ?.filter { it.hallId == inv?.hallId }
-                    ?.flatMap { it.studentIds }
                     .orEmpty()
 
-                val rawStudents = studentRepository.studentsByIds(studentIds)
-                    .sortedBy { it.position }
+                val rawStudents = studentRepository.studentsByIds(blocks.flatMap { it.studentIds })
+                val studentMap = rawStudents.associateBy { it.id }
 
-                rawStudents.map { s ->
+                val orderedStudents = if (blocks.size == 2) {
+                    val listA = blocks[0].studentIds.mapNotNull { studentMap[it] }
+                    val listB = blocks[1].studentIds.mapNotNull { studentMap[it] }
+                    val interleaved = mutableListOf<Student>()
+                    val maxSize = maxOf(listA.size, listB.size)
+                    for (i in 0 until maxSize) {
+                        if (i < listA.size) interleaved.add(listA[i])
+                        if (i < listB.size) interleaved.add(listB[i])
+                    }
+                    interleaved
+                } else {
+                    blocks.flatMap { b -> b.studentIds.mapNotNull { studentMap[it] } }
+                }
+
+                orderedStudents.mapIndexed { index, s ->
                     val isPresent = attendanceOverrides[s.id] ?: true
                     HallStudentAttendance(
                         id = s.id,
                         registerNumber = s.registerNumber,
                         name = s.name,
-                        yearLabel = s.year.label,
+                        yearLabel = "Bench ${index + 1} · ${s.year.label}",
                         section = s.section.ifBlank { "A" },
                         isPresent = isPresent,
                     )

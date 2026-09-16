@@ -34,7 +34,7 @@ class ArrangementGenerator(private val random: Random) {
         const val BATCH_SIZE = 15
         const val PHASE_1_MAX_HALLS = 12
         const val PHASE_2_MAX_HALLS = 8
-        const val PHASE_3_HALLS = 2
+        const val PHASE_3_HALLS = 4
     }
 
     /** A 15-position batch of students of one year. Gaps in positions are preserved. */
@@ -64,7 +64,7 @@ class ArrangementGenerator(private val random: Random) {
 
         val yearPools = activeStudents
             .groupBy { it.year }
-            .mapValues { (_, list) -> list.sortedBy { it.position } }
+            .mapValues { (_, list) -> sanitizeCohortPositions(list) }
 
         val applicableYears = when (phase) {
             ExamPhase.PHASE_1 -> listOf(StudentYear.YEAR_2, StudentYear.YEAR_3, StudentYear.YEAR_4)
@@ -92,7 +92,7 @@ class ArrangementGenerator(private val random: Random) {
         val hallAssignments = hallPlan.flatMapIndexed { index, entry ->
             entry.blocks.map { block ->
                 HallAssignment(
-                    id = "ha_${date}_${entry.hall.id}_${block.year.name}",
+                    id = "ha_${date}_${entry.hall.id}_${block.year.name}_${block.startPosition}",
                     hallId = entry.hall.id,
                     year = block.year,
                     semester = semesters[block.year] ?: defaultSemester(block.year),
@@ -157,6 +157,56 @@ class ArrangementGenerator(private val random: Random) {
         return batches
     }
 
+    /**
+     * Reconciles academic cohort numbering:
+     * - Resolves Section B / Section A duplicate S.No positions from CSV imports.
+     * - Resolves lateral entry students (301, 302, 370) and readmitted students by assigning them
+     *   to vacant slots in the standard 1..120 roll range so that each academic year
+     *   strictly fits into at most 8 fixed 15-student batches (positions 1..120).
+     * - Guarantees no batch exceeds 15 students and prevents room capacity overflow.
+     */
+    fun sanitizeCohortPositions(students: List<Student>): List<Student> {
+        val sorted = students.sortedWith(compareBy({ it.section }, { it.registerNumber }, { it.id }))
+        val posCounts = sorted.groupingBy { it.position }.eachCount()
+        val hasDuplicate = posCounts.any { it.value > 1 }
+        val hasHugeGaps = sorted.any { it.position > 120 }
+        val allValid = sorted.all { it.position > 0 }
+
+        if (!hasDuplicate && !hasHugeGaps && allValid) {
+            return sorted.sortedBy { it.position }
+        }
+
+        val takenPositions = mutableSetOf<Int>()
+        val assigned = mutableListOf<Student>()
+        val unassigned = mutableListOf<Student>()
+
+        // First pass: assign regular students with natural unique 1..120 rolls
+        for (s in sorted) {
+            val roll = s.extractRollNumber()
+            val isLateral = s.registerNumber.endsWith("301") ||
+                s.registerNumber.endsWith("302") ||
+                s.registerNumber.endsWith("370")
+            if (roll in 1..120 && roll !in takenPositions && !isLateral) {
+                takenPositions.add(roll)
+                assigned.add(s.copy(position = roll))
+            } else {
+                unassigned.add(s)
+            }
+        }
+
+        // Second pass: fill vacant slots in 1..120 for unassigned students
+        var nextPos = 1
+        for (s in unassigned) {
+            while (nextPos in takenPositions) {
+                nextPos++
+            }
+            takenPositions.add(nextPos)
+            assigned.add(s.copy(position = nextPos))
+        }
+
+        return assigned.sortedBy { it.position }
+    }
+
     // ------------------------------------------------------------------
     // Hall planning
     // ------------------------------------------------------------------
@@ -169,31 +219,105 @@ class ArrangementGenerator(private val random: Random) {
         activeHalls: List<Hall>,
     ): List<HallPlanEntry> = when (phase) {
         ExamPhase.PHASE_3 -> planPhase3(batchesByYear.getValue(StudentYear.YEAR_3), activeHalls)
+        ExamPhase.PHASE_1 -> {
+            val hasAll3 = batchesByYear.containsKey(StudentYear.YEAR_2) &&
+                    batchesByYear.containsKey(StudentYear.YEAR_3) &&
+                    batchesByYear.containsKey(StudentYear.YEAR_4)
+            val tripletPlan = if (hasAll3) planPhase1Triplets(batchesByYear, activeHalls) else emptyList()
+            if (tripletPlan.isNotEmpty()) {
+                tripletPlan
+            } else {
+                planMixed(phase, batchesByYear, activeHalls)
+            }
+        }
         else -> planMixed(phase, batchesByYear, activeHalls)
     }
 
     /**
-     * Phase 3: exactly two halls, 3rd-year batches split across them, no mixing.
-     * Phase 3 rooms seat two students per bench (the college's day-7 practice), so the
-     * per-hall limit is double the normal exam capacity - otherwise the whole 3rd year
-     * could never fit in exactly two rooms.
+     * Deterministic 3-Hall Cyclic Triplet Mingling Sequence for Phase 1:
+     * - Triplet Slot 0 (Hall 1, 4, 7, 10): 2nd Year (Row 1) + 3rd Year (Row 2)
+     * - Triplet Slot 1 (Hall 2, 5, 8, 11): 4th Year (Row 1) + 2nd Year (Row 2)
+     * - Triplet Slot 2 (Hall 3, 6, 9, 12): 3rd Year (Row 1) + 4th Year (Row 2)
+     * This guarantees perfectly balanced progression across all 3 years without jumping.
      */
-    private fun planPhase3(batches: List<StudentBatch>, halls: List<Hall>): List<HallPlanEntry> {
-        if (batches.isEmpty() || halls.size < PHASE_3_HALLS) return emptyList()
-        val chosen = halls.take(PHASE_3_HALLS)
-        val plan = chosen.map { HallPlanEntry(it, mutableListOf()) }
-        batches.forEachIndexed { index, batch ->
-            plan[index % plan.size].blocks.add(batch)
+    private fun planPhase1Triplets(
+        batchesByYear: Map<StudentYear, List<StudentBatch>>,
+        halls: List<Hall>,
+    ): List<HallPlanEntry> {
+        val y2Queue = ArrayDeque(batchesByYear[StudentYear.YEAR_2].orEmpty())
+        val y3Queue = ArrayDeque(batchesByYear[StudentYear.YEAR_3].orEmpty())
+        val y4Queue = ArrayDeque(batchesByYear[StudentYear.YEAR_4].orEmpty())
+
+        val plan = mutableListOf<HallPlanEntry>()
+        var hallIdx = 0
+        var tripletSlot = 0
+
+        while (hallIdx < halls.size && hallIdx < PHASE_1_MAX_HALLS &&
+            (y2Queue.isNotEmpty() || y3Queue.isNotEmpty() || y4Queue.isNotEmpty())
+        ) {
+            val hall = halls[hallIdx++]
+            val blocks = mutableListOf<StudentBatch>()
+
+            when (tripletSlot % 3) {
+                0 -> {
+                    // Hall 1, 4, 7, 10: Year 2 first, Year 3 second
+                    if (y2Queue.isNotEmpty()) blocks.add(y2Queue.removeFirst())
+                    if (y3Queue.isNotEmpty()) blocks.add(y3Queue.removeFirst())
+                }
+                1 -> {
+                    // Hall 2, 5, 8, 11: Year 4 first, Year 2 second
+                    if (y4Queue.isNotEmpty()) blocks.add(y4Queue.removeFirst())
+                    if (y2Queue.isNotEmpty()) blocks.add(y2Queue.removeFirst())
+                }
+                2 -> {
+                    // Hall 3, 6, 9, 12: Year 3 first, Year 4 second
+                    if (y3Queue.isNotEmpty()) blocks.add(y3Queue.removeFirst())
+                    if (y4Queue.isNotEmpty()) blocks.add(y4Queue.removeFirst())
+                }
+            }
+
+            if (blocks.isNotEmpty()) {
+                plan.add(HallPlanEntry(hall, blocks))
+            }
+            tripletSlot++
+        }
+
+        if (y2Queue.isNotEmpty() || y3Queue.isNotEmpty() || y4Queue.isNotEmpty()) {
+            return emptyList()
         }
         return plan
     }
 
     /**
-     * Phases 1 and 2: each hall receives batches from up to two different years.
-     * To guarantee complete seating within the phase's hall limit, batches are drained
-     * from the largest remaining year queues first (random among equal sizes), which
-     * keeps year queues balanced and prevents a year from stranding leftover students.
-     * A batch is only seated if the hall's exam capacity allows.
+     * Phase 3: Single cohort (3rd-year) distributed across 4 halls with at most 30 students per hall
+     * (1 student per bench across 30 benches). Never crowd 75 students into 2 rooms.
+     */
+    private fun planPhase3(batches: List<StudentBatch>, halls: List<Hall>): List<HallPlanEntry> {
+        if (batches.isEmpty() || halls.isEmpty()) return emptyList()
+        val plan = mutableListOf<HallPlanEntry>()
+        val batchQueue = ArrayDeque(batches)
+        var hallIdx = 0
+        while (batchQueue.isNotEmpty() && hallIdx < halls.size) {
+            val hall = halls[hallIdx]
+            hallIdx++
+            val entry = HallPlanEntry(hall, mutableListOf())
+            var seated = 0
+            while (batchQueue.isNotEmpty() && seated + batchQueue.first().students.size <= hall.capacity) {
+                val batch = batchQueue.removeFirst()
+                entry.blocks.add(batch)
+                seated += batch.students.size
+            }
+            if (entry.blocks.isNotEmpty()) {
+                plan.add(entry)
+            }
+        }
+        if (batchQueue.isNotEmpty()) return emptyList()
+        return plan
+    }
+
+    /**
+     * Phases 1 (fallback) and 2: each hall receives batches from two different years (15 + 15 = 30 students).
+     * Benches alternate so students in adjacent benches are from different cohorts.
      */
     private fun planMixed(
         phase: ExamPhase,
@@ -215,15 +339,16 @@ class ArrangementGenerator(private val random: Random) {
 
             var seated = 0
             repeat(2) {
-                val fittingQueues = queues.filter { (year, queue) ->
-                    queue.isNotEmpty() &&
-                        entry.blocks.none { block -> block.year == year } &&
-                        seated + queue.first().students.size <= hall.capacity
-                }
+                val fittingQueues = queues
+                    .filter { (year, queue) ->
+                        queue.isNotEmpty() &&
+                            entry.blocks.none { block -> block.year == year } &&
+                            seated + queue.first().students.size <= hall.capacity
+                    }
+                    .sortedWith(compareByDescending<Pair<StudentYear, ArrayDeque<StudentBatch>>> { it.second.size }.thenBy { it.first.value })
+
                 if (fittingQueues.isEmpty()) return@repeat
-                val maxSize = fittingQueues.maxOf { it.second.size }
-                val tied = fittingQueues.filter { it.second.size == maxSize }
-                val chosen = tied[random.nextInt(tied.size)]
+                val chosen = fittingQueues.first()
                 val batch = chosen.second.removeFirst()
                 entry.blocks.add(batch)
                 seated += batch.students.size
@@ -261,7 +386,7 @@ class ArrangementGenerator(private val random: Random) {
         repeat(halls.size) { hallIndex ->
             val hall = halls[hallIndex]
             val candidates = teachers
-                .filter { it.role != UserRole.HOD }
+                .filter { it.role != UserRole.ADMIN && it.role != UserRole.HOD }
                 .filter { !statsByTeacher.getValue(it.id).hasDutyOnDate }
                 .filter { it.role != UserRole.EXAM_CELL_COORDINATOR || statsByTeacher.getValue(it.id).coordinatorDaysUsed == 0 }
             if (candidates.isEmpty()) return assignments
@@ -318,8 +443,8 @@ class ArrangementGenerator(private val random: Random) {
         val errors = mutableListOf<String>()
         if (students.none { it.active }) errors.add("There are no active students. Add or activate students first.")
         if (halls.none { it.active }) errors.add("There are no active examination halls. Add or activate halls first.")
-        if (teachers.none { it.active && it.role != UserRole.HOD }) {
-            errors.add("No teachers are available for invigilation duty. The HOD is excluded from duties.")
+        if (teachers.none { it.active && it.role != UserRole.ADMIN && it.role != UserRole.HOD }) {
+            errors.add("No teachers are available for invigilation duty.")
         }
         return if (errors.isEmpty()) null else errors
     }

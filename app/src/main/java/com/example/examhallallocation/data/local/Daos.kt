@@ -187,6 +187,12 @@ interface ArrangementDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertInvigilatorAssignments(assignments: List<InvigilatorAssignmentEntity>)
 
+    @Query("DELETE FROM hall_assignments WHERE arrangementId = :arrangementId OR arrangementId IN (SELECT id FROM arrangements WHERE date = :date)")
+    suspend fun deleteHallAssignmentsForDate(date: String, arrangementId: String)
+
+    @Query("DELETE FROM invigilator_assignments WHERE arrangementId = :arrangementId OR arrangementId IN (SELECT id FROM arrangements WHERE date = :date)")
+    suspend fun deleteInvigilatorAssignmentsForDate(date: String, arrangementId: String)
+
     @Query("DELETE FROM hall_assignments WHERE arrangementId = :arrangementId")
     suspend fun deleteHallAssignments(arrangementId: String)
 
@@ -198,6 +204,12 @@ interface ArrangementDao {
 
     @Query("UPDATE arrangements SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: String, status: String)
+
+    @Query("DELETE FROM hall_assignments")
+    suspend fun clearAllHallAssignments()
+
+    @Query("DELETE FROM invigilator_assignments")
+    suspend fun clearAllInvigilatorAssignments()
 
     @Query("DELETE FROM arrangements")
     suspend fun clearAll()
@@ -212,6 +224,8 @@ interface ArrangementDao {
         hallAssignments: List<HallAssignmentEntity>,
         invigilatorAssignments: List<InvigilatorAssignmentEntity>,
     ) {
+        deleteHallAssignmentsForDate(date, arrangement.id)
+        deleteInvigilatorAssignmentsForDate(date, arrangement.id)
         deleteArrangementByDate(date)
         insertArrangement(arrangement)
         insertHallAssignments(hallAssignments)

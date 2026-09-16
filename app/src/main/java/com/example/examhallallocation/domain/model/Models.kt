@@ -18,7 +18,7 @@ data class Student(
     fun extractRollNumber(): Int {
         val digits = registerNumber.filter { it.isDigit() }
         if (digits.isNotEmpty()) {
-            if (digits.length >= 6) {
+            if (digits.length >= 3) {
                 val suffix3 = digits.takeLast(3).toIntOrNull()
                 if (suffix3 != null && suffix3 > 0) return suffix3
             } else {
@@ -125,4 +125,23 @@ data class UserSession(
     val name: String,
     val username: String,
     val role: UserRole,
+)
+
+data class TeacherDutyAssignment(
+    val date: String,
+    val hallRoomNumber: String,
+    val floor: String,
+    val block: String,
+    val session: String,
+)
+
+data class TeacherDutySummary(
+    val teacherId: String,
+    val teacherName: String,
+    val username: String,
+    val role: UserRole,
+    val active: Boolean,
+    val totalDuties: Int,
+    val examName: String,
+    val assignments: List<TeacherDutyAssignment> = emptyList(),
 )

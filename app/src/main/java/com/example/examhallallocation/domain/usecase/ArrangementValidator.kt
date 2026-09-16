@@ -48,8 +48,7 @@ object ArrangementValidator {
             val hallTotal = arrangement.hallAssignments
                 .filter { it.hallId == ha.hallId }
                 .sumOf { it.studentIds.size }
-            // Phase 3 rooms seat two students per bench (see ArrangementGenerator.planPhase3).
-            val capacityLimit = if (arrangement.phase == ExamPhase.PHASE_3) hall.capacity * 2 else hall.capacity
+            val capacityLimit = hall.capacity
             if (hallTotal > capacityLimit) {
                 errors.add("Hall ${hall.roomNumber} exceeds capacity: $hallTotal of $capacityLimit.")
             }
@@ -74,7 +73,7 @@ object ArrangementValidator {
             .forEach { errors.add("Year ${it.year.label} is not allowed in ${arrangement.phase.label}.") }
 
         // In phases 1 and 2 a hall receives at most one 15-position batch per year
-        // (the 15+15 pattern). Phase 3 instead stacks several 3rd-year batches per hall.
+        // (the 15+15 pattern). Phase 3 instead stacks two 3rd-year batches per hall.
         if (arrangement.phase != ExamPhase.PHASE_3) {
             arrangement.hallAssignments
                 .groupBy { it.hallId }
@@ -86,11 +85,11 @@ object ArrangementValidator {
                 }
         }
 
-        // --- Phase 3: exactly two halls ---------------------------------------
+        // --- Phase 3: up to 4 halls (30 students per hall across 30 benches) ---
         if (arrangement.phase == ExamPhase.PHASE_3) {
             val occupied = arrangement.hallAssignments.map { it.hallId }.distinct().size
-            if (occupied != ArrangementGenerator.PHASE_3_HALLS) {
-                errors.add("Phase 3 must use exactly 2 halls, found $occupied.")
+            if (occupied > ArrangementGenerator.PHASE_3_HALLS) {
+                errors.add("Phase 3 must not exceed ${ArrangementGenerator.PHASE_3_HALLS} halls, found $occupied.")
             }
         }
 
