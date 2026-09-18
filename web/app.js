@@ -5,7 +5,7 @@
 
 // Firebase Configuration from google-services.json
 const firebaseConfig = {
-  apiKey: "AIzaSyA9K3kNlRyceiPW26otPF_1ECPDiul3HEM",
+  apiKey: "",
   authDomain: "grt-exam-hall-allocation.firebaseapp.com",
   projectId: "grt-exam-hall-allocation",
   storageBucket: "grt-exam-hall-allocation.firebasestorage.app",
